@@ -1,12 +1,14 @@
 package com.test.speechtotext;
 
 import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.speech.RecognitionListener;
@@ -27,6 +29,7 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,8 +44,9 @@ public class MainActivity extends AppCompatActivity {
     private SpeechRecognizer speechRecognizer;
     //String check="I want to order two hamburgers with cheese";
    // String check="I want to order two hamburgers";
+    List<String> STATIC_LIST = Arrays.asList("Apple", "Banana", "Cherry","pizza","hamburger","burger","mayo","cold drink");
 
-    private static final Map<String, Integer> numberWords = new HashMap<>();
+     private static final Map<String, Integer> numberWords = new HashMap<>();
 
     static {
         numberWords.put("zero", 0);
@@ -112,109 +116,122 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.e("final value is >>",""+check);
                 String replacedText = replaceNumberStrings(check);
-                if(replacedText.toLowerCase().contains("and")|| replacedText.toLowerCase().contains("or")){
-
-                    String[] parts = splitBeforeAndAfterWith(getTextAfterNumber(replacedText));
-String first="";
-                    if (parts.length == 2) {
-                        String beforeWith = parts[0].trim(); // String before "with"
-                        String afterWith = parts[1].trim(); // String after "with"
-
-                        System.out.println("Before 'with': " + beforeWith);
-                        System.out.println("After 'with': " + afterWith);
-                        Log.e("number value is >>",""+beforeWith);
-                        Log.e("number value is >>",""+afterWith);
+                Log.e("replacedTextis >>>>>>",""+replacedText);
+                if(replacedText.toLowerCase().contains("and")|| replacedText.toLowerCase().contains("or")|| replacedText.toLowerCase().contains("with")){
+                    Log.e("getTextAfterNumber >",""+getTextAfterNumber(replacedText));
 
 
+                       String[] parts = splitBeforeAndAfterWith(getTextAfterNumber(replacedText)!=null?getTextAfterNumber(replacedText):replacedText);
+                       String first = "";
+                       if (parts.length == 2) {
+                           String beforeWith = parts[0].trim(); // String before "with"
+                           String afterWith = parts[1].trim(); // String after "with"
 
-                        if(replaceNumberStrings(beforeWith)!=null ){
-                            String replacedText_before = replaceNumberStrings(beforeWith);
-                            if(findNumber(replacedText_before)!=null) {
-                                String number = findNumber(replacedText_before);
-                                if(replacedText_before.contains("with") ||replacedText_before.contains("include")||replacedText_before.contains("included")){
-
-                                    List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_before));
-
-                                    if (words.size() == 2) {
-                                        System.out.println("Word before 'with': " + words.get(0));
-                                        System.out.println("Word after 'with': " + words.get(1));
-                                        first=number+" " +words.get(0)+" with "+words.get(1);
-                                     //   binding.searchTxt.setText(number+" " +words.get(0)+" with "+words.get(1));
-                                        Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
-                                    } else {
-                                        System.out.println("No 'with' found in the sentence.");
-
-                                    }
+                           System.out.println("Before 'with': " + beforeWith);
+                           System.out.println("After 'with': " + afterWith);
+                           Log.e("number value is >>", "" + beforeWith);
+                           Log.e("number value is >>", "" + afterWith);
 
 
+                           if (replaceNumberStrings(beforeWith) != null) {
+                               String replacedText_before = replaceNumberStrings(beforeWith);
+                               Log.e("replacedText_before>>>",""+replacedText_before);
+                               if (findNumber(replacedText_before) != null) {
+                                   String number = findNumber(replacedText_before);
+                                   if (replacedText_before.contains("with") || replacedText_before.contains("include") || replacedText_before.contains("included")) {
 
-                                }
-                                else {
-                                    if( extractWordsafterNumber(beforeWith)!=null) {
-                                        Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(beforeWith));
-                                       // binding.searchTxt.setText(""+ number + " " + extractWordsafterNumber(beforeWith));
-                                        first=extractWordsafterNumber(beforeWith);
-                                    }
-                                }
+                                       List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_before));
 
-                            }else {
-                                Toast.makeText(MainActivity.this,"Invalid Order formate",Toast.LENGTH_LONG).show();
-                                binding.searchTxt.setText("Invalid Order format ! ");
-                            }
-                    }
+                                       if (words.size() == 2) {
+                                           System.out.println("Word before 'with': " + words.get(0));
+                                           System.out.println("Word after 'with': " + words.get(1));
+                                           first = number + " " + words.get(0) + " with " + words.get(1);
+                                           //   binding.searchTxt.setText(number+" " +words.get(0)+" with "+words.get(1));
+                                           Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
+                                       } else {
+                                           System.out.println("No 'with' found in the sentence.");
 
-
-                        if(replaceNumberStrings(afterWith)!=null ){
-                            String replacedText_after = replaceNumberStrings(afterWith);
-                            if(findNumber(replacedText_after)!=null) {
-                                String number = findNumber(replacedText_after);
-                                if(replacedText_after.contains("with") ||replacedText_after.contains("include")||replacedText_after.contains("included")){
-
-                                    List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_after));
-
-                                    if (words.size() == 2) {
-                                        System.out.println("Word before 'with': " + words.get(0));
-                                        System.out.println("Word after 'with': " + words.get(1));
-                                       // first=number+" " +words.get(0)+" with "+words.get(1);
-                                        if(!first.equals("")) {
-                                            binding.searchTxt.setText(""+first+"\n\n"+number + " " + words.get(0) + " with " + words.get(1));
-                                        }else{
-                                        binding.searchTxt.setText(number+" " +words.get(0)+" with "+words.get(1));}
-
-                                        Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
-                                    } else {
-                                        System.out.println("No 'with' found in the sentence.");
-
-                                    }
-
-
-
-                                }
-                                else {
-                                    if( extractWordsafterNumber(afterWith)!=null) {
-                                        Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(afterWith));
-                                       if(!first.equals("")){
-                                           binding.searchTxt.setText(""+first+"\n\n"+ number + " " + extractWordsafterNumber(afterWith));
                                        }
-                                       else {
-                                        binding.searchTxt.setText(""+ number + " " + extractWordsafterNumber(afterWith));}
-                                    }
-                                }
-
-                            }else {
-                                Toast.makeText(MainActivity.this,"Invalid Order formate",Toast.LENGTH_LONG).show();
-                                binding.searchTxt.setText("Invalid Order format ! ");
-                            }
-                    }
 
 
+                                   } else {
+                                       if (extractWordsafterNumber(beforeWith) != null) {
+                                           Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(beforeWith));
+                                           // binding.searchTxt.setText(""+ number + " " + extractWordsafterNumber(beforeWith));
+                                           first = extractWordsafterNumber(beforeWith);
+                                       }
+                                   }
 
-                    }
+                               }
+                               else {
+                                 //  Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
+                                   binding.searchTxt.setText("1 "+beforeWith +" with "+afterWith);
+
+                                 //  showAlert("Invalid Order format !");
+                               }
+                           }
+
+
+                           if (replaceNumberStrings(afterWith) != null) {
+                               String replacedText_after = replaceNumberStrings(afterWith);
+                               if (findNumber(replacedText_after) != null) {
+                                   String number = findNumber(replacedText_after);
+                                   if (replacedText_after.contains("with") || replacedText_after.contains("include") || replacedText_after.contains("included")) {
+
+                                       List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_after));
+
+                                       if (words.size() == 2) {
+                                           System.out.println("Word before 'with': " + words.get(0));
+                                           System.out.println("Word after 'with': " + words.get(1));
+                                           // first=number+" " +words.get(0)+" with "+words.get(1);
+                                           if (!first.equals("")) {
+                                               binding.searchTxt.setText("" + first + "\n\n" + number + " " + words.get(0) + " with " + words.get(1));
+                                           } else {
+                                               binding.searchTxt.setText(number + " " + words.get(0) + " with " + words.get(1));
+                                           }
+
+                                           Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
+                                       } else {
+                                           System.out.println("No 'with' found in the sentence.");
+
+                                       }
+
+
+                                   } else {
+                                       if (extractWordsafterNumber(afterWith) != null) {
+                                           Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(afterWith));
+                                           if (!first.equals("")) {
+                                               binding.searchTxt.setText("" + first + "\n\n" + number + " " + extractWordsafterNumber(afterWith));
+                                           } else {
+                                               binding.searchTxt.setText("" + number + " " + extractWordsafterNumber(afterWith));
+                                           }
+                                       }
+                                   }
+
+                               }
+                               else {
+                                  /* Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
+                                   binding.searchTxt.setText("Invalid Order format ! ");
+                                   showAlert("Invalid Order format !");*/
+                                   binding.searchTxt.setText("1 "+beforeWith +" with "+afterWith);
+                               }
+                           } else {
+
+                               binding.searchTxt.setText(check);
+                           }
+
+                       }
+
+
+
                 }
+
                 else {
                     if(replaceNumberStrings(check)!=null ){
+
                     if(findNumber(replacedText)!=null) {
                         String number = findNumber(replacedText);
+
                         if(replacedText.contains("with") ||replacedText.contains("include")||replacedText.contains("included")){
 
 
@@ -235,6 +252,7 @@ String first="";
 
 
                         }
+
                         else {
                             if( extractWordsafterNumber(replacedText)!=null) {
                                 Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(replacedText));
@@ -243,10 +261,65 @@ String first="";
                         }
 
                     }else {
-                        Toast.makeText(MainActivity.this,"Invalid Order formate",Toast.LENGTH_LONG).show();
-                        binding.searchTxt.setText("Invalid Order format ! ");
+
+
+                        if(replacedText.contains("with") ||replacedText.contains("include")||replacedText.contains("included")){
+
+                           if(extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText)) !=null) {
+                               List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
+
+                               if (words.size() == 2) {
+                                   System.out.println("Word before 'with': " + words.get(0));
+                                   System.out.println("Word after 'with': " + words.get(1));
+                                   binding.searchTxt.setText(" " + words.get(0) + " with " + words.get(1));
+                                   // Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
+                               } else {
+
+
+                                   System.out.println("No 'with' found in the sentence.");
+
+                               }
+                           }
+
+
+                        }else {
+                            if(STATIC_LIST.contains(check) ){
+                                binding.searchTxt.setText("1 "+check);
+                            }else {
+                            Toast.makeText(MainActivity.this,"Invalid Order formate",Toast.LENGTH_LONG).show();
+                            binding.searchTxt.setText("Invalid Order format ! ");}
+                        }
                     }
-                }}
+                }
+                    else {
+                        if(replacedText.contains("with") ||replacedText.contains("include")||replacedText.contains("included")){
+
+                            List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
+
+                            if (words.size() == 2) {
+                                System.out.println("Word before 'with': " + words.get(0));
+                                System.out.println("Word after 'with': " + words.get(1));
+                                binding.searchTxt.setText(" " +words.get(0)+" with "+words.get(1));
+                               // Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
+                            } else {
+                                System.out.println("No 'with' found in the sentence.");
+
+                            }
+
+
+
+                        }else {
+                            if(STATIC_LIST.contains(check) ){
+                                binding.searchTxt.setText("1 "+check);
+                            }else {
+
+                                Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
+                                binding.searchTxt.setText("Invalid Order format ! ");
+                            }
+                        }
+                    }
+
+                }
 
             }
         }
@@ -406,9 +479,9 @@ String first="";
         }else  if(sentence.toLowerCase().contains("included")){
          parts = sentence.split("\\bincluded\\b", 2);
         }else  if(sentence.toLowerCase().contains("and")){
-         parts = sentence.split("\\bincluded\\b", 2);
+         parts = sentence.split("\\and\\b", 2);
         }else  if(sentence.toLowerCase().contains("or")){
-         parts = sentence.split("\\bincluded\\b", 2);
+         parts = sentence.split("\\bor\\b", 2);
         }
 
         // Return the parts
@@ -428,38 +501,41 @@ String first="";
     }
 
     public static List<String> extractWordsBeforeAndAfterWith(String sentence) {
-        List<String> words = new ArrayList<>();
+        try {
+            List<String> words = new ArrayList<>();
 
-        // Split the sentence into words
-        String[] wordArray = sentence.split("\\s+");
+            // Split the sentence into words
+            String[] wordArray = sentence.split("\\s+");
 
-        // Find the index of "with" in the array
-        int withIndex = -1;
-        for (int i = 0; i < wordArray.length; i++) {
-            if (wordArray[i].equalsIgnoreCase("with") || wordArray[i].equalsIgnoreCase("include")|| wordArray[i].equalsIgnoreCase("included")) {
-                withIndex = i;
-                break;
-            }
-        }
-
-        // If "with" is found, get the word before and after it
-        if (withIndex != -1) {
-            // Get the word before "with"
-            if (withIndex > 0) {
-                words.add(wordArray[withIndex - 1]);
-            } else {
-                words.add(""); // Add an empty string if no word before "with"
+            // Find the index of "with" in the array
+            int withIndex = -1;
+            for (int i = 0; i < wordArray.length; i++) {
+                if (wordArray[i].equalsIgnoreCase("with") || wordArray[i].equalsIgnoreCase("include") || wordArray[i].equalsIgnoreCase("included")) {
+                    withIndex = i;
+                    break;
+                }
             }
 
-            // Get the word after "with"
-            if (withIndex < wordArray.length - 1) {
-                words.add(wordArray[withIndex + 1]);
-            } else {
-                words.add(""); // Add an empty string if no word after "with"
-            }
-        }
+            // If "with" is found, get the word before and after it
+            if (withIndex != -1) {
+                // Get the word before "with"
+                if (withIndex > 0) {
+                    words.add(wordArray[withIndex - 1]);
+                } else {
+                    words.add(""); // Add an empty string if no word before "with"
+                }
 
-        return words;
+                // Get the word after "with"
+                if (withIndex < wordArray.length - 1) {
+                    words.add(wordArray[withIndex + 1]);
+                } else {
+                    words.add(""); // Add an empty string if no word after "with"
+                }
+            }
+
+            return words;
+        }catch (Exception e){}
+        return  null;
     }
 
     public String extractWordsafterNumber(String input) {
@@ -484,5 +560,25 @@ String first="";
             return null;
         }
 
+    }
+
+
+    public void showAlert(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Alert")
+                .setMessage(message)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Handle positive button click
+                    }
+                });
+                /*.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Handle cancel button click
+                        dialog.dismiss();
+                    }
+                });*/
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }
