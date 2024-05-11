@@ -30,6 +30,7 @@ import com.google.gson.reflect.TypeToken;
 import com.test.speechtotext.adapter.ItemListAdapter;
 import com.test.speechtotext.databinding.ActivityMainBinding;
 import com.test.speechtotext.model.Example;
+import com.test.speechtotext.model.ItemSelected;
 import com.test.speechtotext.requestModel.CompletionRequest;
 import com.test.speechtotext.requestModel.Message;
 import com.test.speechtotext.utility.AppConfig;
@@ -67,9 +68,9 @@ public class MainActivity extends AppCompatActivity {
     private SpeechRecognizer speechRecognizer;
     //String check="I want to order two hamburgers with cheese";
     // String check="I want to order two hamburgers";
-    List<String> STATIC_LIST = Arrays.asList("Apple", "Banana", "Cherry", "pizza", "hamburger", "burger", "mayo", "cold drink");
+    List<String> STATIC_LIST = Arrays.asList("the", "with", "and", "as", "a", "like", "or","i","not","have","am","found","like","would","can","was","to","we");
     List<Example> menuItems = new ArrayList<>();
-    List<String> item_LIST = new ArrayList<>();
+    List<ItemSelected> item_LIST = new ArrayList<>();
     ItemListAdapter side_rv_adapter;
     private static final Map<String, Integer> numberWords = new HashMap<>();
 
@@ -651,11 +652,11 @@ public class MainActivity extends AppCompatActivity {
                                                     ErrorMessage.E("item name>>>" + menuItem.getCategoryName());
                                                     ErrorMessage.E("extractOrder>>>>" + extractOrder(content).getItem());
 
-                                                    item_LIST.add("" + extractOrder(content).getQuantity() + " $" + menuItem.getCategoryName() + menuItem.getPrice());
+                                                   // item_LIST.add("" + extractOrder(content).getQuantity() + " $" + menuItem.getCategoryName() + menuItem.getPrice());
 
                                                     for (int i = 0; i < menuItem.getSubCategory().size(); i++) {
                                                         if (menuItem.getSubCategory().get(i).getSubcategoryName().contains(extractOrder(content).getItem())) {
-                                                            item_LIST.add("" + extractOrder(content).getQuantity() + menuItem.getSubCategory().get(i).getSubcategoryName() + " $" + menuItem.getSubCategory().get(i).getSubcategoryPrice());
+                                                         //   item_LIST.add("" + extractOrder(content).getQuantity() + menuItem.getSubCategory().get(i).getSubcategoryName() + " $" + menuItem.getSubCategory().get(i).getSubcategoryPrice());
                                                         }
                                                     }
 
@@ -746,6 +747,8 @@ public class MainActivity extends AppCompatActivity {
                                     menuItems.add(example);
                                 }
 
+                              //  extractProductAndMatch("I would like to have a hamburger with onion", menuItems);
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 ErrorMessage.E("Exception" + e.toString());
@@ -792,47 +795,63 @@ public class MainActivity extends AppCompatActivity {
 
                     Pattern pattern = Pattern.compile("\\b" + Pattern.quote(products.get(j).getCategoryName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
                     Matcher matcher = pattern.matcher(words[i].toLowerCase());
+                    ItemSelected itemSelected=new ItemSelected();
                     if (matcher.find()) {
                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getCategoryName() + ", Product: " + words[i]);
                         if (i > 0) {
                             if (isNumeric(words[i - 1])) {
                                 ErrorMessage.E("Ordered Quantity: " + words[i - 1] + ", Product: " + words[i]);
-                                item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
+                               // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
+                                itemSelected.setItem_name("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
                             } else {
                                 ErrorMessage.E("Ordered Quantity: 1" + ", Product: " + words[i]);
-                                item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                              //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                                itemSelected.setItem_name("1" + " " + words[i] + " $" + products.get(j).getPrice());
 
                             }
                         } else {
-                            item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                         //   item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                            itemSelected.setItem_name("1" + " " + words[i] + " $" + products.get(j).getPrice());
                         }
 
-                    } else {
+                    }
+                    else {
                         ErrorMessage.E("Product not found: ");
 
                         for (int k = 0; k < products.get(j).getSubCategory().size(); k++) {
-
                             Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getSubCategory().get(k).getSubcategoryName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
                             Matcher matcher1 = pattern1.matcher(words[i].toLowerCase());
                             if (matcher1.find()) {
                                 if (i > 0) {
                                     if (isNumeric(words[i - 1])) {
                                         ErrorMessage.E("Ordered Quantity: " + words[i - 1] + ", Product: " + words[i]);
-                                        item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                       // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                        itemSelected.setSubcategory_name("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+
                                     } else {
                                         ErrorMessage.E("Ordered Quantity: 1" + ", Product: " + words[i]);
-                                        item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
-
+                                      //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                        itemSelected.setSubcategory_name("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                     }
                                 } else {
-                                    item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                  //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                    itemSelected.setSubcategory_name("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                 }
-
                             } else {
-                                ErrorMessage.E("Product not found: ");
+                               /* if (!STATIC_LIST.contains(words[i].toLowerCase()) && !products.contains(words[i].toLowerCase()) ) {
+                                ErrorMessage.E("Product not found: "+words[i].toLowerCase());
+                                    itemSelected.setError_message(words[i].toLowerCase()+" not found");
+                                }*/
                             }
                         }
                     }
+
+                    if(itemSelected!=null){
+                        if(itemSelected.getItem_name()!=null || (itemSelected.getSubcategory_name()!=null || itemSelected.getError_message()!=null)){
+                        item_LIST.add(itemSelected);
+                        }
+                    }
+
                 }
 
             }
