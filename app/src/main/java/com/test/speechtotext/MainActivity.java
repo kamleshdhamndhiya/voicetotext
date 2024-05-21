@@ -1,11 +1,10 @@
 package com.test.speechtotext;
 
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -21,15 +20,35 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+import com.test.speechtotext.adapter.ItemListAdapter;
 import com.test.speechtotext.databinding.ActivityMainBinding;
+import com.test.speechtotext.model.Example;
+import com.test.speechtotext.model.ItemSelected;
+import com.test.speechtotext.requestModel.CompletionRequest;
+import com.test.speechtotext.requestModel.Message;
+import com.test.speechtotext.utility.AppConfig;
+import com.test.speechtotext.utility.AppConfig_second;
+import com.test.speechtotext.utility.ErrorMessage;
+import com.test.speechtotext.utility.NetworkUtil;
 
 import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.Toast;
 
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -37,16 +56,23 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private SpeechRecognizer speechRecognizer;
     //String check="I want to order two hamburgers with cheese";
-   // String check="I want to order two hamburgers";
-    List<String> STATIC_LIST = Arrays.asList("Apple", "Banana", "Cherry","pizza","hamburger","burger","mayo","cold drink");
-
-     private static final Map<String, Integer> numberWords = new HashMap<>();
+    // String check="I want to order two hamburgers";
+    List<String> STATIC_LIST = Arrays.asList("the", "with", "and", "as", "a", "like", "or","i","not","have","am","found","like","would","can","was","to","we");
+    List<Example> menuItems = new ArrayList<>();
+    List<ItemSelected> item_LIST = new ArrayList<>();
+    ItemListAdapter side_rv_adapter;
+    private static final Map<String, Integer> numberWords = new HashMap<>();
 
     static {
         numberWords.put("zero", 0);
@@ -65,10 +91,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        getPrice();
         setSupportActionBar(binding.toolbar);
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
         speechRecognizer.setRecognitionListener(new MyRecognitionListener());
@@ -82,7 +107,18 @@ public class MainActivity extends AppCompatActivity {
                 startVoiceRecognition();
             }
         });
-       //Log.e("number value is >>",""+replaceNumberStrings(check));
+        binding.clearBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                binding.actualSearchTxt.setText("");
+                binding.searchTxt.setText("");
+                if (side_rv_adapter != null && item_LIST.size() > 0) {
+                    item_LIST.clear();
+                    side_rv_adapter.notifyDataSetChanged();
+                }
+            }
+        });
+        //Log.e("number value is >>",""+replaceNumberStrings(check));
 
        /* Log.e("number value is >>",""+findNumber(replacedText));
         Log.e("number value is >>",""+getFirstWordAfterNumber(replacedText));*/
@@ -112,206 +148,200 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (result != null && result.size() > 0) {
                 String check = result.get(0);
-               // binding.searchTxt.setText(check);
+                binding.actualSearchTxt.setText(check);
+                // aiResponse();
 
-                Log.e("final value is >>",""+check);
-                String replacedText = replaceNumberStrings(check);
-                Log.e("replacedTextis >>>>>>",""+replacedText);
-                if(replacedText.toLowerCase().contains("and")|| replacedText.toLowerCase().contains("or")|| replacedText.toLowerCase().contains("with")){
-                    Log.e("getTextAfterNumber >",""+getTextAfterNumber(replacedText));
+                extractProductAndMatch(check, menuItems);
+                Log.e("final value is >>", "" + check);
 
 
-                       String[] parts = splitBeforeAndAfterWith(getTextAfterNumber(replacedText)!=null?getTextAfterNumber(replacedText):replacedText);
-                       String first = "";
-                       if (parts.length == 2) {
-                           String beforeWith = parts[0].trim(); // String before "with"
-                           String afterWith = parts[1].trim(); // String after "with"
-
-                           System.out.println("Before 'with': " + beforeWith);
-                           System.out.println("After 'with': " + afterWith);
-                           Log.e("number value is >>", "" + beforeWith);
-                           Log.e("number value is >>", "" + afterWith);
+              /*  String replacedText = replaceNumberStrings(check);
+                Log.e("replacedTextis >>>>>>", "" + replacedText);
+                if (replacedText.toLowerCase().contains("and") || replacedText.toLowerCase().contains("or") || replacedText.toLowerCase().contains("with")) {
+                    Log.e("getTextAfterNumber >", "" + getTextAfterNumber(replacedText));
 
 
-                           if (replaceNumberStrings(beforeWith) != null) {
-                               String replacedText_before = replaceNumberStrings(beforeWith);
-                               Log.e("replacedText_before>>>",""+replacedText_before);
-                               if (findNumber(replacedText_before) != null) {
-                                   String number = findNumber(replacedText_before);
-                                   if (replacedText_before.contains("with") || replacedText_before.contains("include") || replacedText_before.contains("included")) {
+                    String[] parts = splitBeforeAndAfterWith(getTextAfterNumber(replacedText) != null ? getTextAfterNumber(replacedText) : replacedText);
+                    String first = "";
+                    if (parts.length == 2) {
+                        String beforeWith = parts[0].trim(); // String before "with"
+                        String afterWith = parts[1].trim(); // String after "with"
 
-                                       List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_before));
-
-                                       if (words.size() == 2) {
-                                           System.out.println("Word before 'with': " + words.get(0));
-                                           System.out.println("Word after 'with': " + words.get(1));
-                                           first = number + " " + words.get(0) + " with " + words.get(1);
-                                           //   binding.searchTxt.setText(number+" " +words.get(0)+" with "+words.get(1));
-                                           Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
-                                       } else {
-                                           System.out.println("No 'with' found in the sentence.");
-
-                                       }
+                        System.out.println("Before 'with': " + beforeWith);
+                        System.out.println("After 'with': " + afterWith);
+                        Log.e("number value is >>", "" + beforeWith);
+                        Log.e("number value is >>", "" + afterWith);
 
 
-                                   } else {
-                                       if (extractWordsafterNumber(beforeWith) != null) {
-                                           Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(beforeWith));
-                                           // binding.searchTxt.setText(""+ number + " " + extractWordsafterNumber(beforeWith));
-                                           first = extractWordsafterNumber(beforeWith);
-                                       }
-                                   }
+                        if (replaceNumberStrings(beforeWith) != null) {
+                            String replacedText_before = replaceNumberStrings(beforeWith);
+                            Log.e("replacedText_before>>>", "" + replacedText_before);
+                            if (findNumber(replacedText_before) != null) {
+                                String number = findNumber(replacedText_before);
+                                if (replacedText_before.contains("with") || replacedText_before.contains("include") || replacedText_before.contains("included")) {
 
-                               }
-                               else {
-                                 //  Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
-                                   binding.searchTxt.setText("1 "+beforeWith +" with "+afterWith);
+                                    List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_before));
 
-                                 //  showAlert("Invalid Order format !");
-                               }
-                           }
+                                    if (words.size() == 2) {
+                                        System.out.println("Word before 'with': " + words.get(0));
+                                        System.out.println("Word after 'with': " + words.get(1));
+                                        first = number + " " + words.get(0) + " with " + words.get(1);
+                                        //   binding.searchTxt.setText(number+" " +words.get(0)+" with "+words.get(1));
+                                        Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
+                                    } else {
+                                        System.out.println("No 'with' found in the sentence.");
 
-
-                           if (replaceNumberStrings(afterWith) != null) {
-                               String replacedText_after = replaceNumberStrings(afterWith);
-                               if (findNumber(replacedText_after) != null) {
-                                   String number = findNumber(replacedText_after);
-                                   if (replacedText_after.contains("with") || replacedText_after.contains("include") || replacedText_after.contains("included")) {
-
-                                       List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_after));
-
-                                       if (words.size() == 2) {
-                                           System.out.println("Word before 'with': " + words.get(0));
-                                           System.out.println("Word after 'with': " + words.get(1));
-                                           // first=number+" " +words.get(0)+" with "+words.get(1);
-                                           if (!first.equals("")) {
-                                               binding.searchTxt.setText("" + first + "\n\n" + number + " " + words.get(0) + " with " + words.get(1));
-                                           } else {
-                                               binding.searchTxt.setText(number + " " + words.get(0) + " with " + words.get(1));
-                                           }
-
-                                           Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
-                                       } else {
-                                           System.out.println("No 'with' found in the sentence.");
-
-                                       }
+                                    }
 
 
-                                   } else {
-                                       if (extractWordsafterNumber(afterWith) != null) {
-                                           Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(afterWith));
-                                           if (!first.equals("")) {
-                                               binding.searchTxt.setText("" + first + "\n\n" + number + " " + extractWordsafterNumber(afterWith));
-                                           } else {
-                                               binding.searchTxt.setText("" + number + " " + extractWordsafterNumber(afterWith));
-                                           }
-                                       }
-                                   }
+                                } else {
+                                    if (extractWordsafterNumber(beforeWith) != null) {
+                                        Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(beforeWith));
+                                        // binding.searchTxt.setText(""+ number + " " + extractWordsafterNumber(beforeWith));
+                                        first = extractWordsafterNumber(beforeWith);
+                                    }
+                                }
 
-                               }
-                               else {
-                                  /* Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
-                                   binding.searchTxt.setText("Invalid Order format ! ");
-                                   showAlert("Invalid Order format !");*/
-                                   binding.searchTxt.setText("1 "+beforeWith +" with "+afterWith);
-                               }
-                           } else {
-
-                               binding.searchTxt.setText(check);
-                           }
-
-                       }
-
-
-
-                }
-
-                else {
-                    if(replaceNumberStrings(check)!=null ){
-
-                    if(findNumber(replacedText)!=null) {
-                        String number = findNumber(replacedText);
-
-                        if(replacedText.contains("with") ||replacedText.contains("include")||replacedText.contains("included")){
-
-
-
-
-                            List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
-
-                            if (words.size() == 2) {
-                                System.out.println("Word before 'with': " + words.get(0));
-                                System.out.println("Word after 'with': " + words.get(1));
-                                binding.searchTxt.setText(number+" " +words.get(0)+" with "+words.get(1));
-                                Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
                             } else {
-                                System.out.println("No 'with' found in the sentence.");
+                                //  Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
+                                binding.searchTxt.setText("1 " + beforeWith + " with " + afterWith);
 
-                            }
-
-
-
-                        }
-
-                        else {
-                            if( extractWordsafterNumber(replacedText)!=null) {
-                                Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(replacedText));
-                                binding.searchTxt.setText(""+ number + " " + extractWordsafterNumber(replacedText));
+                                //  showAlert("Invalid Order format !");
                             }
                         }
 
-                    }else {
+
+                        if (replaceNumberStrings(afterWith) != null) {
+                            String replacedText_after = replaceNumberStrings(afterWith);
+                            if (findNumber(replacedText_after) != null) {
+                                String number = findNumber(replacedText_after);
+                                if (replacedText_after.contains("with") || replacedText_after.contains("include") || replacedText_after.contains("included")) {
+
+                                    List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText_after));
+
+                                    if (words.size() == 2) {
+                                        System.out.println("Word before 'with': " + words.get(0));
+                                        System.out.println("Word after 'with': " + words.get(1));
+                                        // first=number+" " +words.get(0)+" with "+words.get(1);
+                                        if (!first.equals("")) {
+                                            binding.searchTxt.setText("" + first + "\n\n" + number + " " + words.get(0) + " with " + words.get(1));
+                                        } else {
+                                            binding.searchTxt.setText(number + " " + words.get(0) + " with " + words.get(1));
+                                        }
+
+                                        Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
+                                    } else {
+                                        System.out.println("No 'with' found in the sentence.");
+
+                                    }
 
 
-                        if(replacedText.contains("with") ||replacedText.contains("include")||replacedText.contains("included")){
+                                } else {
+                                    if (extractWordsafterNumber(afterWith) != null) {
+                                        Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(afterWith));
+                                        if (!first.equals("")) {
+                                            binding.searchTxt.setText("" + first + "\n\n" + number + " " + extractWordsafterNumber(afterWith));
+                                        } else {
+                                            binding.searchTxt.setText("" + number + " " + extractWordsafterNumber(afterWith));
+                                        }
+                                    }
+                                }
 
-                           if(extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText)) !=null) {
-                               List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
+                            } else {
+                                  *//* Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
+                                   binding.searchTxt.setText("Invalid Order format ! ");
+                                   showAlert("Invalid Order format !");*//*
+                                binding.searchTxt.setText("1 " + beforeWith + " with " + afterWith);
+                            }
+                        } else {
 
-                               if (words.size() == 2) {
-                                   System.out.println("Word before 'with': " + words.get(0));
-                                   System.out.println("Word after 'with': " + words.get(1));
-                                   binding.searchTxt.setText(" " + words.get(0) + " with " + words.get(1));
-                                   // Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
-                               } else {
+                            binding.searchTxt.setText(check);
+                        }
 
-
-                                   System.out.println("No 'with' found in the sentence.");
-
-                               }
-                           }
+                    }
 
 
-                        }else {
-                            if(STATIC_LIST.contains(check) ){
-                                binding.searchTxt.setText("1 "+check);
-                            }else {
-                            Toast.makeText(MainActivity.this,"Invalid Order formate",Toast.LENGTH_LONG).show();
-                            binding.searchTxt.setText("Invalid Order format ! ");}
+                } else {
+                    if (replaceNumberStrings(check) != null) {
+
+                        if (findNumber(replacedText) != null) {
+                            String number = findNumber(replacedText);
+
+                            if (replacedText.contains("with") || replacedText.contains("include") || replacedText.contains("included")) {
+
+
+                                List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
+
+                                if (words.size() == 2) {
+                                    System.out.println("Word before 'with': " + words.get(0));
+                                    System.out.println("Word after 'with': " + words.get(1));
+                                    binding.searchTxt.setText(number + " " + words.get(0) + " with " + words.get(1));
+                                    Log.e("number value is >>", "" + number + " " + words.get(0) + " with " + words.get(1));
+                                } else {
+                                    System.out.println("No 'with' found in the sentence.");
+
+                                }
+
+
+                            } else {
+                                if (extractWordsafterNumber(replacedText) != null) {
+                                    Log.e("number value is >>", "" + number + " " + extractWordsafterNumber(replacedText));
+                                    binding.searchTxt.setText("" + number + " " + extractWordsafterNumber(replacedText));
+                                }
+                            }
+
+                        } else {
+
+
+                            if (replacedText.contains("with") || replacedText.contains("include") || replacedText.contains("included")) {
+
+                                if (extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText)) != null) {
+                                    List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
+
+                                    if (words.size() == 2) {
+                                        System.out.println("Word before 'with': " + words.get(0));
+                                        System.out.println("Word after 'with': " + words.get(1));
+                                        binding.searchTxt.setText(" " + words.get(0) + " with " + words.get(1));
+                                        // Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
+                                    } else {
+
+
+                                        System.out.println("No 'with' found in the sentence.");
+
+                                    }
+                                }
+
+
+                            } else {
+                                if (STATIC_LIST.contains(check)) {
+                                    binding.searchTxt.setText("1 " + check);
+                                } else {
+                                    Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
+                                    binding.searchTxt.setText("Invalid Order format ! ");
+                                }
+                            }
                         }
                     }
-                }
                     else {
-                        if(replacedText.contains("with") ||replacedText.contains("include")||replacedText.contains("included")){
+                        if (replacedText.contains("with") || replacedText.contains("include") || replacedText.contains("included")) {
 
                             List<String> words = extractWordsBeforeAndAfterWith(getTextAfterNumber(replacedText));
 
                             if (words.size() == 2) {
                                 System.out.println("Word before 'with': " + words.get(0));
                                 System.out.println("Word after 'with': " + words.get(1));
-                                binding.searchTxt.setText(" " +words.get(0)+" with "+words.get(1));
-                               // Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
+                                binding.searchTxt.setText(" " + words.get(0) + " with " + words.get(1));
+                                // Log.e("number value is >>",""+number+" " +words.get(0)+" with "+words.get(1));
                             } else {
                                 System.out.println("No 'with' found in the sentence.");
 
                             }
 
 
-
-                        }else {
-                            if(STATIC_LIST.contains(check) ){
-                                binding.searchTxt.setText("1 "+check);
-                            }else {
+                        } else {
+                            if (STATIC_LIST.contains(check)) {
+                                binding.searchTxt.setText("1 " + check);
+                            } else {
 
                                 Toast.makeText(MainActivity.this, "Invalid Order formate", Toast.LENGTH_LONG).show();
                                 binding.searchTxt.setText("Invalid Order format ! ");
@@ -319,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-                }
+                }*/
 
             }
         }
@@ -332,20 +362,6 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -361,7 +377,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak something");
-       
+
 
         try {
             startActivityForResult(intent, 100);
@@ -422,7 +438,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static String findNumber(String sentence) {
         // Regular expression pattern to match any digit
-       // Pattern pattern = Pattern.compile("\\d+");
+        // Pattern pattern = Pattern.compile("\\d+");
         Pattern pattern = Pattern.compile("\\b\\d+\\b");
         Matcher matcher = pattern.matcher(sentence);
 
@@ -433,6 +449,7 @@ public class MainActivity extends AppCompatActivity {
             return null; // Return null if no number is found
         }
     }
+
     public static String replaceNumberStrings(String text) {
 
         // Regular expression pattern to match any number string
@@ -469,24 +486,26 @@ public class MainActivity extends AppCompatActivity {
         }
         return null; // Return null if no match is found or if the pattern does not match the expected format
     }
+
     public static String[] splitBeforeAndAfterWith(String sentence) {
         // Split the sentence by "with"
         String[] parts = new String[0];
-        if(sentence.toLowerCase().contains("with")){
-         parts = sentence.split("\\bwith\\b", 2);
-        }else  if(sentence.toLowerCase().contains("include")){
-         parts = sentence.split("\\binclude\\b", 2);
-        }else  if(sentence.toLowerCase().contains("included")){
-         parts = sentence.split("\\bincluded\\b", 2);
-        }else  if(sentence.toLowerCase().contains("and")){
-         parts = sentence.split("\\and\\b", 2);
-        }else  if(sentence.toLowerCase().contains("or")){
-         parts = sentence.split("\\bor\\b", 2);
+        if (sentence.toLowerCase().contains("with")) {
+            parts = sentence.split("\\bwith\\b", 2);
+        } else if (sentence.toLowerCase().contains("include")) {
+            parts = sentence.split("\\binclude\\b", 2);
+        } else if (sentence.toLowerCase().contains("included")) {
+            parts = sentence.split("\\bincluded\\b", 2);
+        } else if (sentence.toLowerCase().contains("and")) {
+            parts = sentence.split("\\and\\b", 2);
+        } else if (sentence.toLowerCase().contains("or")) {
+            parts = sentence.split("\\bor\\b", 2);
         }
 
         // Return the parts
         return parts;
     }
+
     public static String getTextAfterNumber(String text) {
         // Regular expression pattern to match a number followed by any text
         Pattern pattern = Pattern.compile("\\b\\d+\\s*(.*)");
@@ -534,8 +553,9 @@ public class MainActivity extends AppCompatActivity {
             }
 
             return words;
-        }catch (Exception e){}
-        return  null;
+        } catch (Exception e) {
+        }
+        return null;
     }
 
     public String extractWordsafterNumber(String input) {
@@ -580,5 +600,356 @@ public class MainActivity extends AppCompatActivity {
                 });*/
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    private void aiResponse() {
+        try {
+            if (NetworkUtil.isNetworkAvailable(MainActivity.this)) {
+                final Dialog materialDialog = ErrorMessage.initProgressDialog(MainActivity.this);
+
+                Message message = new Message("user", "convert text into restaurant order value " + binding.actualSearchTxt.getText().toString());
+                List<Message> messages = new ArrayList<>();
+                messages.add(message);
+
+// Create the completion request
+                CompletionRequest request = new CompletionRequest(
+                        "gpt-3.5-turbo",
+                        messages,
+                        0.0,
+                        200,
+                        1.0,
+                        0.0,
+                        0.0,
+                        Collections.singletonList("11.")
+                );
+
+
+                Call<ResponseBody> call = AppConfig.api_Interface().completions(request);
+                call.enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        ErrorMessage.E("sendToken" + response.code());
+                        if (response.isSuccessful()) {
+                            try {
+                                // ErrorMessage.E("sendToken" + response.body().string());
+                                materialDialog.dismiss();
+                                try {
+                                    String result = response.body().string();
+                                    JSONObject obj = new JSONObject(result);
+                                    ErrorMessage.E("sendToken" + obj.toString());
+                                    JSONArray choicesArray = obj.getJSONArray("choices");
+                                    if (choicesArray.length() > 0) {
+                                        JSONObject firstChoice = choicesArray.getJSONObject(0);
+                                        JSONObject message = firstChoice.getJSONObject("message");
+                                        String content = message.getString("content");
+                                        System.out.println("Content: " + content);
+                                        //  binding.searchTxt.setText("" + content);
+                                        if (menuItems != null) {
+                                            for (Example menuItem : menuItems) {
+                                                ErrorMessage.E("item name>>>" + menuItem.getCategoryName());
+                                                ErrorMessage.E("extractOrder>>>>" + extractOrder(content).getItem());
+                                                if (menuItem.getCategoryName().contains(extractOrder(content).getItem())) {
+                                                    ErrorMessage.E("item name>>>" + menuItem.getCategoryName());
+                                                    ErrorMessage.E("extractOrder>>>>" + extractOrder(content).getItem());
+
+                                                   // item_LIST.add("" + extractOrder(content).getQuantity() + " $" + menuItem.getCategoryName() + menuItem.getPrice());
+
+                                                    for (int i = 0; i < menuItem.getSubCategory().size(); i++) {
+                                                        if (menuItem.getSubCategory().get(i).getSubcategoryName().contains(extractOrder(content).getItem())) {
+                                                         //   item_LIST.add("" + extractOrder(content).getQuantity() + menuItem.getSubCategory().get(i).getSubcategoryName() + " $" + menuItem.getSubCategory().get(i).getSubcategoryPrice());
+                                                        }
+                                                    }
+
+                                                }
+                                            }
+                                            ErrorMessage.E("item_LIST>>>" + item_LIST.size());
+                                        } else {
+                                            binding.searchTxt.setText("Item not found, please try again.");
+                                        }
+                                    }
+
+
+                                } catch (Exception e) {
+                                    ErrorMessage.E("Exception" + e.toString());
+                                }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                materialDialog.dismiss();
+                                ErrorMessage.E("Exception" + e.toString());
+
+                            }
+
+
+                        } else {
+                            materialDialog.dismiss();
+                            try {
+                                ErrorMessage.E("sendToken else is working" + response.errorBody().string());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                ErrorMessage.E("error in catch" + e.toString());
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        // ErrorMessage.T(getActivity(), "Response Fail");
+                        System.out.println("============update profile fail  :" + t.toString());
+                        materialDialog.dismiss();
+                    }
+                });
+
+            } else {
+                ErrorMessage.T(MainActivity.this, getResources().getString(R.string.no_internet_found));
+            }
+        } catch (Exception e) {
+            ErrorMessage.E("Exception>>>>" + e.toString());
+        }
+
+    }
+
+    public RestaurantOrder extractOrder(String text) {
+        Pattern pattern = Pattern.compile("(\\d+)\\s+(\\w+)");
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            int quantity = Integer.parseInt(matcher.group(1));
+            String item = matcher.group(2);
+            return new RestaurantOrder(quantity, item);
+        } else {
+            int quantity = 1;
+            String item = matcher.group(2);
+            return new RestaurantOrder(quantity, item);
+        }
+
+    }
+
+    private void getPrice() {
+        try {
+            if (NetworkUtil.isNetworkAvailable(MainActivity.this)) {
+                final Dialog materialDialog = ErrorMessage.initProgressDialog(MainActivity.this);
+                Call<ResponseBody> call = AppConfig_second.api_Interface().itemsPrice();
+                call.enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        materialDialog.dismiss();
+                        ErrorMessage.E("sendToken" + response.code());
+                        if (response.isSuccessful()) {
+                            try {
+                                //  ErrorMessage.E("sendToken" + response.body().string());
+                                String result = response.body().string();
+                                ErrorMessage.E("sendToken" + result);
+                                JSONArray jsonArray = new JSONArray(result);
+                                Gson gson = new Gson();
+                                for (int i = 0; i < jsonArray.length(); i++) {
+
+                                    Example example = gson.fromJson(jsonArray.getString(i), Example.class);
+                                    menuItems.add(example);
+                                }
+
+                              //  extractProductAndMatch("I would like to have a hamburger with onion", menuItems);
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                ErrorMessage.E("Exception" + e.toString());
+
+                            }
+
+
+                        } else {
+                            try {
+                                ErrorMessage.E("sendToken else is working" + response.errorBody().string());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                ErrorMessage.E("error in catch" + e.toString());
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        // ErrorMessage.T(getActivity(), "Response Fail");
+                        materialDialog.dismiss();
+                        System.out.println("============update profile fail  :" + t.toString());
+                    }
+                });
+
+            } else {
+                ErrorMessage.T(MainActivity.this, getResources().getString(R.string.no_internet_found));
+            }
+        } catch (Exception e) {
+            ErrorMessage.E("Exception>>>>" + e.toString());
+        }
+
+    }
+
+
+    private void extractProductAndMatch(String text, List<Example> products) {
+        // Regex pattern to extract the product name and quantity
+        try {
+            String[] words = text.split("\\s+");
+
+            for (int i = 0; i < words.length; i++) {
+
+                for (int j = 0; j < products.size(); j++) {
+
+                    Pattern pattern = Pattern.compile("\\b" + Pattern.quote(products.get(j).getCategoryName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                    Matcher matcher = pattern.matcher(words[i].toLowerCase());
+                    ItemSelected itemSelected=new ItemSelected();
+                    if (matcher.find()) {
+                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getCategoryName() + ", Product: " + words[i]);
+                        if (i > 0) {
+                            if (isNumeric(words[i - 1])) {
+                                ErrorMessage.E("Ordered Quantity: " + words[i - 1] + ", Product: " + words[i]);
+                               // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
+                                itemSelected.setItem_name("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
+                            } else {
+                                ErrorMessage.E("Ordered Quantity: 1" + ", Product: " + words[i]);
+                              //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                                itemSelected.setItem_name("1" + " " + words[i] + " $" + products.get(j).getPrice());
+
+                            }
+                        } else {
+                         //   item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                            itemSelected.setItem_name("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                        }
+
+                    }
+                    else {
+                        ErrorMessage.E("Product not found: ");
+
+                        for (int k = 0; k < products.get(j).getSubCategory().size(); k++) {
+                            Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getSubCategory().get(k).getSubcategoryName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1 = pattern1.matcher(words[i].toLowerCase());
+                            if (matcher1.find()) {
+                                if (i > 0) {
+                                    if (isNumeric(words[i - 1])) {
+                                        ErrorMessage.E("Ordered Quantity: " + words[i - 1] + ", Product: " + words[i]);
+                                       // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                        itemSelected.setSubcategory_name("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+
+                                    } else {
+                                        ErrorMessage.E("Ordered Quantity: 1" + ", Product: " + words[i]);
+                                      //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                        itemSelected.setSubcategory_name("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                    }
+                                } else {
+                                  //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                    itemSelected.setSubcategory_name("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                }
+                            } else {
+                               /* if (!STATIC_LIST.contains(words[i].toLowerCase()) && !products.contains(words[i].toLowerCase()) ) {
+                                ErrorMessage.E("Product not found: "+words[i].toLowerCase());
+                                    itemSelected.setError_message(words[i].toLowerCase()+" not found");
+                                }*/
+                            }
+                        }
+                    }
+
+                    if(itemSelected!=null){
+                        if(itemSelected.getItem_name()!=null || (itemSelected.getSubcategory_name()!=null || itemSelected.getError_message()!=null)){
+                        item_LIST.add(itemSelected);
+                        }
+                    }
+
+                }
+
+            }
+
+
+            if (item_LIST.size() > 0) {
+                binding.searchTxt.setVisibility(View.GONE);
+                binding.listRcv.setVisibility(View.VISIBLE);
+                side_rv_adapter = new ItemListAdapter(MainActivity.this, item_LIST);
+                binding.listRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.listRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.listRcv.scheduleLayoutAnimation();
+                binding.listRcv.setNestedScrollingEnabled(false);
+                binding.listRcv.setAdapter(side_rv_adapter);
+                binding.listRcv.setHasFixedSize(true);
+                side_rv_adapter.notifyDataSetChanged();
+            } else {
+                binding.searchTxt.setVisibility(View.VISIBLE);
+                binding.listRcv.setVisibility(View.GONE);
+                binding.searchTxt.setText("Item not found, please try again.");
+
+            }
+        } catch (Exception e) {
+        }
+    }
+
+    public boolean isNumeric(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+}
+
+class RestaurantOrder {
+    private int quantity;
+    private String item;
+
+    public RestaurantOrder(int quantity, String item) {
+        this.quantity = quantity;
+        this.item = item;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public String getItem() {
+        return item;
+    }
+}
+
+class MenuItem {
+    @SerializedName("category_id")
+    private String categoryId;
+
+    @SerializedName("category_name")
+    private String categoryName;
+
+    private String price;
+
+    @SerializedName("subCategory")
+    private List<SubCategory> subCategory;
+
+    // Getters and setters
+    // You can generate them automatically using your IDE or manually
+
+    @Override
+    public String toString() {
+        return "MenuItem{" +
+                "categoryId='" + categoryId + '\'' +
+                ", categoryName='" + categoryName + '\'' +
+                ", price='" + price + '\'' +
+                ", subCategory=" + subCategory +
+                '}';
+    }
+}
+
+class SubCategory {
+    @SerializedName("subcategory_id")
+    private String subcategoryId;
+
+    @SerializedName("subcategory_name")
+    private String subcategoryName;
+
+    @SerializedName("subcategory_price")
+    private String subcategoryPrice;
+
+    // Getters and setters
+
+    @Override
+    public String toString() {
+        return "SubCategory{" +
+                "subcategoryId='" + subcategoryId + '\'' +
+                ", subcategoryName='" + subcategoryName + '\'' +
+                ", subcategoryPrice='" + subcategoryPrice + '\'' +
+                '}';
     }
 }
