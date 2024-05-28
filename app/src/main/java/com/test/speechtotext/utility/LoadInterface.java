@@ -23,6 +23,9 @@ public interface LoadInterface {
     @GET("items.php")
     Call<ResponseBody> itemsPrice();
 
+    @GET("menus")
+    Call<ResponseBody> menus();
+
    }
 
 
