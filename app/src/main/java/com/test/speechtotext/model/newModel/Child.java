@@ -44,7 +44,15 @@ public class Child implements Serializable {
     @SerializedName("children")
     @Expose
     private List<Child__1> children;
+    private Integer quantity;
 
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
     public Integer getId() {
         return id;
     }

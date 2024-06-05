@@ -57,6 +57,16 @@ public class Product implements Serializable {
     @Expose
     private List<Modifier> modifiers;
 
+    private Integer quantity;
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
     public Integer getId() {
         return id;
     }
