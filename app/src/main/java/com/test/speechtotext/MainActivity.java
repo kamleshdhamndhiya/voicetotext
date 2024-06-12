@@ -796,7 +796,7 @@ public class MainActivity extends AppCompatActivity {
                                     menuItems.add(example.getMenus());
                                 }*/
 
-                              //  extractProductAndMatch("2 CAPUCHINO with MILK ", example.getMenus());
+                                extractProductAndMatch("2 CAPUCHINO with MILK ", example.getMenus());
 
                             } catch (Exception e) {
                                 e.printStackTrace();
