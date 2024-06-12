@@ -28,9 +28,26 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.test.speechtotext.adapter.ItemListAdapter;
+import com.test.speechtotext.adapter.MainManuProductAdapter;
+import com.test.speechtotext.adapter.MainMenuAdapter;
+import com.test.speechtotext.adapter.MainMeuChildrenAdapter;
+import com.test.speechtotext.adapter.NotFoundItemListAdapter;
+import com.test.speechtotext.adapter.SecondSubCategoryAdapter;
+import com.test.speechtotext.adapter.SecondSubProductAdapter;
 import com.test.speechtotext.databinding.ActivityMainBinding;
+/*
 import com.test.speechtotext.model.Example;
+*/
 import com.test.speechtotext.model.ItemSelected;
+import com.test.speechtotext.model.newModel.Child;
+import com.test.speechtotext.model.newModel.ChildWithQuantity;
+import com.test.speechtotext.model.newModel.Child__1;
+import com.test.speechtotext.model.newModel.Child__1WithQuantity;
+import com.test.speechtotext.model.newModel.Example;
+import com.test.speechtotext.model.newModel.Product.Modifier;
+import com.test.speechtotext.model.newModel.Product.Product;
+import com.test.speechtotext.model.newModel.Product.ProductWithQuantity;
+import com.test.speechtotext.model.newModel.Product.Size;
 import com.test.speechtotext.requestModel.CompletionRequest;
 import com.test.speechtotext.requestModel.Message;
 import com.test.speechtotext.utility.AppConfig;
@@ -68,10 +85,19 @@ public class MainActivity extends AppCompatActivity {
     private SpeechRecognizer speechRecognizer;
     //String check="I want to order two hamburgers with cheese";
     // String check="I want to order two hamburgers";
-    List<String> STATIC_LIST = Arrays.asList("the", "with", "and", "as", "a", "like", "or","i","not","have","am","found","like","would","can","was","to","we");
-    List<Example> menuItems = new ArrayList<>();
+    List<String> STATIC_LIST = Arrays.asList("the", "with", "and", "as", "a", "like", "or", "i", "not", "have", "am", "found", "like", "would", "can", "was", "to", "we", "one", "more");
+    /*List<com.test.speechtotext.model.newModel.Menu> menuItems = new ArrayList<>();*/
     List<ItemSelected> item_LIST = new ArrayList<>();
+
+    Example example;
     ItemListAdapter side_rv_adapter;
+    MainMenuAdapter mainMenuAdapter;
+    MainMeuChildrenAdapter mainMeuChildrenAdapter;
+    MainManuProductAdapter mainMeuProductAdapter;
+    SecondSubCategoryAdapter secondSubCategoryAdapter;
+    SecondSubProductAdapter secondSubProductAdapter;
+
+    ArrayList<String> noFoundItem = new ArrayList<>();
     private static final Map<String, Integer> numberWords = new HashMap<>();
 
     static {
@@ -88,19 +114,30 @@ public class MainActivity extends AppCompatActivity {
         // Add more mappings as needed
     }
 
+
+    List<com.test.speechtotext.model.newModel.Menu> orderMenus = new ArrayList<>();
+    List<ChildWithQuantity> orderChild = new ArrayList<>();
+    List<ProductWithQuantity> orderProduct = new ArrayList<>();
+    List<Child__1WithQuantity> orderSecondChild = new ArrayList<>();
+    List<ProductWithQuantity> orderSecondProduct = new ArrayList<>();
+    List<Size> orderSize = new ArrayList<>();
+    List<Modifier> orderModifier = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        item_LIST.clear();
+        noFoundItem.clear();
         getPrice();
-        setSupportActionBar(binding.toolbar);
+
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
         speechRecognizer.setRecognitionListener(new MyRecognitionListener());
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        /*NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-
+*/
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -114,8 +151,32 @@ public class MainActivity extends AppCompatActivity {
                 binding.searchTxt.setText("");
                 if (side_rv_adapter != null && item_LIST.size() > 0) {
                     item_LIST.clear();
-                    side_rv_adapter.notifyDataSetChanged();
                 }
+
+                orderMenus.clear();
+                orderSize.clear();
+                orderModifier.clear();
+                orderChild.clear();
+                orderSecondChild.clear();
+                orderSecondProduct.clear();
+
+                if (side_rv_adapter != null)
+                    side_rv_adapter.notifyDataSetChanged();
+
+
+                if (side_rv_adapter != null)
+                    side_rv_adapter.notifyDataSetChanged();
+                if (mainMenuAdapter != null)
+                    mainMenuAdapter.notifyDataSetChanged();
+                if (mainMeuChildrenAdapter != null)
+                    mainMeuChildrenAdapter.notifyDataSetChanged();
+                if (mainMeuProductAdapter != null)
+                    mainMeuProductAdapter.notifyDataSetChanged();
+                if (secondSubCategoryAdapter != null)
+                    secondSubCategoryAdapter.notifyDataSetChanged();
+                if (secondSubProductAdapter != null)
+                    secondSubProductAdapter.notifyDataSetChanged();
+
             }
         });
         //Log.e("number value is >>",""+replaceNumberStrings(check));
@@ -151,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                 binding.actualSearchTxt.setText(check);
                 // aiResponse();
 
-                extractProductAndMatch(check, menuItems);
+                extractProductAndMatch(check, example.getMenus());
                 Log.e("final value is >>", "" + check);
 
 
@@ -353,21 +414,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        return NavigationUI.navigateUp(navController, appBarConfiguration)
-                || super.onSupportNavigateUp();
     }
 
 
@@ -602,7 +648,7 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void aiResponse() {
+  /*  private void aiResponse() {
         try {
             if (NetworkUtil.isNetworkAvailable(MainActivity.this)) {
                 final Dialog materialDialog = ErrorMessage.initProgressDialog(MainActivity.this);
@@ -652,11 +698,11 @@ public class MainActivity extends AppCompatActivity {
                                                     ErrorMessage.E("item name>>>" + menuItem.getCategoryName());
                                                     ErrorMessage.E("extractOrder>>>>" + extractOrder(content).getItem());
 
-                                                   // item_LIST.add("" + extractOrder(content).getQuantity() + " $" + menuItem.getCategoryName() + menuItem.getPrice());
+                                                    // item_LIST.add("" + extractOrder(content).getQuantity() + " $" + menuItem.getCategoryName() + menuItem.getPrice());
 
                                                     for (int i = 0; i < menuItem.getSubCategory().size(); i++) {
                                                         if (menuItem.getSubCategory().get(i).getSubcategoryName().contains(extractOrder(content).getItem())) {
-                                                         //   item_LIST.add("" + extractOrder(content).getQuantity() + menuItem.getSubCategory().get(i).getSubcategoryName() + " $" + menuItem.getSubCategory().get(i).getSubcategoryPrice());
+                                                            //   item_LIST.add("" + extractOrder(content).getQuantity() + menuItem.getSubCategory().get(i).getSubcategoryName() + " $" + menuItem.getSubCategory().get(i).getSubcategoryPrice());
                                                         }
                                                     }
 
@@ -707,9 +753,9 @@ public class MainActivity extends AppCompatActivity {
             ErrorMessage.E("Exception>>>>" + e.toString());
         }
 
-    }
+    }*/
 
-    public RestaurantOrder extractOrder(String text) {
+/*    public RestaurantOrder extractOrder(String text) {
         Pattern pattern = Pattern.compile("(\\d+)\\s+(\\w+)");
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
@@ -722,13 +768,13 @@ public class MainActivity extends AppCompatActivity {
             return new RestaurantOrder(quantity, item);
         }
 
-    }
+    }*/
 
     private void getPrice() {
         try {
             if (NetworkUtil.isNetworkAvailable(MainActivity.this)) {
                 final Dialog materialDialog = ErrorMessage.initProgressDialog(MainActivity.this);
-                Call<ResponseBody> call = AppConfig_second.api_Interface().itemsPrice();
+                Call<ResponseBody> call = AppConfig_second.api_Interface().menus();
                 call.enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -739,15 +785,18 @@ public class MainActivity extends AppCompatActivity {
                                 //  ErrorMessage.E("sendToken" + response.body().string());
                                 String result = response.body().string();
                                 ErrorMessage.E("sendToken" + result);
-                                JSONArray jsonArray = new JSONArray(result);
+                                JSONObject JSONObject = new JSONObject(result);
                                 Gson gson = new Gson();
-                                for (int i = 0; i < jsonArray.length(); i++) {
+
+                                example = gson.fromJson(JSONObject.toString(), Example.class);
+
+                               /* for (int i = 0; i < jsonArray.length(); i++) {
 
                                     Example example = gson.fromJson(jsonArray.getString(i), Example.class);
-                                    menuItems.add(example);
-                                }
+                                    menuItems.add(example.getMenus());
+                                }*/
 
-                              //  extractProductAndMatch("I would like to have a hamburger with onion", menuItems);
+                                extractProductAndMatch("2 CAPUCHINO with MILK ", example.getMenus());
 
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -784,7 +833,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void extractProductAndMatch(String text, List<Example> products) {
+    /*private void extractProductAndMatch(String text, List<Example> products) {
         // Regex pattern to extract the product name and quantity
         try {
             String[] words = text.split("\\s+");
@@ -795,27 +844,26 @@ public class MainActivity extends AppCompatActivity {
 
                     Pattern pattern = Pattern.compile("\\b" + Pattern.quote(products.get(j).getCategoryName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
                     Matcher matcher = pattern.matcher(words[i].toLowerCase());
-                    ItemSelected itemSelected=new ItemSelected();
+                    ItemSelected itemSelected = new ItemSelected();
                     if (matcher.find()) {
                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getCategoryName() + ", Product: " + words[i]);
                         if (i > 0) {
                             if (isNumeric(words[i - 1])) {
                                 ErrorMessage.E("Ordered Quantity: " + words[i - 1] + ", Product: " + words[i]);
-                               // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
+                                // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
                                 itemSelected.setItem_name("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getPrice());
                             } else {
                                 ErrorMessage.E("Ordered Quantity: 1" + ", Product: " + words[i]);
-                              //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                                //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
                                 itemSelected.setItem_name("1" + " " + words[i] + " $" + products.get(j).getPrice());
 
                             }
                         } else {
-                         //   item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
+                            //   item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getPrice());
                             itemSelected.setItem_name("1" + " " + words[i] + " $" + products.get(j).getPrice());
                         }
 
-                    }
-                    else {
+                    } else {
                         ErrorMessage.E("Product not found: ");
 
                         for (int k = 0; k < products.get(j).getSubCategory().size(); k++) {
@@ -825,36 +873,49 @@ public class MainActivity extends AppCompatActivity {
                                 if (i > 0) {
                                     if (isNumeric(words[i - 1])) {
                                         ErrorMessage.E("Ordered Quantity: " + words[i - 1] + ", Product: " + words[i]);
-                                       // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                        // item_LIST.add("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                         itemSelected.setSubcategory_name("" + words[i - 1] + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
 
                                     } else {
                                         ErrorMessage.E("Ordered Quantity: 1" + ", Product: " + words[i]);
-                                      //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                        //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                         itemSelected.setSubcategory_name("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                     }
                                 } else {
-                                  //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
+                                    //  item_LIST.add("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                     itemSelected.setSubcategory_name("1" + " " + words[i] + " $" + products.get(j).getSubCategory().get(k).getSubcategoryPrice());
                                 }
                             } else {
-                               /* if (!STATIC_LIST.contains(words[i].toLowerCase()) && !products.contains(words[i].toLowerCase()) ) {
-                                ErrorMessage.E("Product not found: "+words[i].toLowerCase());
-                                    itemSelected.setError_message(words[i].toLowerCase()+" not found");
-                                }*/
+                                if (!STATIC_LIST.contains(words[i].toLowerCase()) && !products.contains(words[i].toLowerCase())) {
+                                    ErrorMessage.E("Product not found: >>>>>>>" + words[i].toLowerCase());
+                                    // itemSelected.setError_message(words[i].toLowerCase()+" not found");
+                                    if (noFoundItem.size() > 0) {
+
+                                        if (!noFoundItem.contains(words[i])) {
+                                            if (itemSelected.getItem_name() == null || itemSelected.getSubcategory_name() == null) {
+                                                ErrorMessage.E("Product not found: >>>inner>>>>" + words[i]);
+                                                noFoundItem.add(words[i]);
+                                            }
+                                        }
+                                    } else {
+                                        ErrorMessage.E("Product not found: >>>inner>first>>>" + words[i]);
+                                        noFoundItem.add(words[i]);
+                                    }
+                                }
                             }
                         }
                     }
 
-                    if(itemSelected!=null){
-                        if(itemSelected.getItem_name()!=null || (itemSelected.getSubcategory_name()!=null || itemSelected.getError_message()!=null)){
-                        item_LIST.add(itemSelected);
+                    if (itemSelected != null) {
+                        if (itemSelected.getItem_name() != null || (itemSelected.getSubcategory_name() != null || itemSelected.getError_message() != null)) {
+                            item_LIST.add(itemSelected);
                         }
                     }
 
                 }
 
             }
+            ErrorMessage.E("Product found: >>>>>>>" +noFoundItem.size());
 
 
             if (item_LIST.size() > 0) {
@@ -874,7 +935,417 @@ public class MainActivity extends AppCompatActivity {
                 binding.searchTxt.setText("Item not found, please try again.");
 
             }
+
+            if (noFoundItem.size() > 0) {
+                if (noFoundItem.size() > 0 && item_LIST.size() > 0) {
+
+                    for (int k = 0; k < item_LIST.size(); k++) {
+                        Log.e("print item name>>>>>", "" + item_LIST.get(k).getItem_name());
+
+
+                        if (item_LIST.get(k).getItem_name() != null) {
+                            String[] words1 = item_LIST.get(k).getItem_name().split("\\s+");
+                            for (int i = 0; i < words1.length; i++) {
+                                for (int g = 0; g < noFoundItem.size(); g++) {
+                                    ErrorMessage.E("Product found: >>>>>>>" +noFoundItem.get(g).toLowerCase()+"<><>"+ words1[i].toLowerCase());
+
+
+                                    Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(noFoundItem.get(g).toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher1 = pattern1.matcher(words1[i].toLowerCase());
+                                    if (matcher1.find()) {
+                                        noFoundItem.remove(words1[i]);
+                                    }
+
+                                }
+
+
+                            }
+                        }
+
+                        if (item_LIST.get(k).getSubcategory_name() != null) {
+                            String[] words3 = item_LIST.get(k).getSubcategory_name().split("\\s+");
+                            for (int i = 0; i < words3.length; i++) {
+                                for (int g = 0; g < noFoundItem.size(); g++) {
+                                    Pattern pattern = Pattern.compile("\\b" + Pattern.quote(noFoundItem.get(g).toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher = pattern.matcher(words3[i].toLowerCase());
+                                    if (matcher.find()) {
+                                        noFoundItem.remove(g);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Log.e("print item name>>><<<>>", "" + noFoundItem.size());
+
+                binding.notfoundListRcv.setVisibility(View.VISIBLE);
+                NotFoundItemListAdapter side_rv_adapter = new NotFoundItemListAdapter(MainActivity.this, noFoundItem);
+                binding.notfoundListRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.notfoundListRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.notfoundListRcv.scheduleLayoutAnimation();
+                binding.notfoundListRcv.setNestedScrollingEnabled(false);
+                binding.notfoundListRcv.setAdapter(side_rv_adapter);
+                binding.notfoundListRcv.setHasFixedSize(true);
+                side_rv_adapter.notifyDataSetChanged();
+            } else {
+                binding.notfoundListRcv.setVisibility(View.GONE);
+            }
         } catch (Exception e) {
+            Log.e("print item <<<e>>>>", "" + e.toString());
+        }
+    }*/
+
+    private void extractProductAndMatch(String text, List<com.test.speechtotext.model.newModel.Menu> products) {
+        // Regex pattern to extract the product name and quantity
+        try {
+            String[] words = text.split("\\s+");
+
+            for (int i = 0; i < words.length; i++) {
+                if (i == 0) {
+                    for (int j = 0; j < products.size(); j++) {
+                        ErrorMessage.E("Search Name>>> : " + words[i]);
+
+                        Pattern pattern = Pattern.compile("\\b" + Pattern.quote(products.get(j).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                        Matcher matcher = pattern.matcher(words[i].toLowerCase());
+
+                       /* Pattern pattern_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getSpanishName() != null ? products.get(j).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                        Matcher matcher_span = pattern_span.matcher(words[i].toLowerCase());
+*/
+                        if (matcher.find() /*|| matcher_span.find()*/) {
+                            ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                            orderMenus.add(products.get(j));
+                        }
+
+                        for (int k = 0; k < products.get(j).getProducts().size(); k++) {
+                            Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1 = pattern1.matcher(words[i].toLowerCase());
+
+                            Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSpanishName() != null ? products.get(j).getProducts().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1_span = pattern1_span.matcher(words[i].toLowerCase());
+
+                            if (matcher1.find() || matcher1_span.find()) {
+                                ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                ProductWithQuantity productWithQuantity = new ProductWithQuantity();
+                                productWithQuantity.setQuantity(0);
+                                productWithQuantity.setProduct(products.get(j).getProducts().get(k));
+                                orderProduct.add(productWithQuantity);
+                            } else {
+                                for (int l = 0; l < products.get(j).getProducts().get(k).getSizes().size(); l++) {
+                                    Pattern patternl = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSizes().get(l).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl = patternl.matcher(words[i].toLowerCase());
+
+                                    Pattern patternl_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSizes().get(l).getSpanishName() != null ? products.get(j).getProducts().get(k).getSizes().get(l).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl_span = patternl_span.matcher(words[i].toLowerCase());
+
+                                    if (matcherl.find() || matcherl_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                        orderSize.add(products.get(j).getProducts().get(k).getSizes().get(l));
+                                    }
+
+                                }
+                                for (int l = 0; l < products.get(j).getProducts().get(k).getModifiers().size(); l++) {
+                                    Pattern patternl = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getModifiers().get(l).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl = patternl.matcher(words[i].toLowerCase());
+
+                                    Pattern patternl_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getModifiers().get(l).getSpanishName() != null ? products.get(j).getProducts().get(k).getModifiers().get(l).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl_span = patternl_span.matcher(words[i].toLowerCase());
+
+                                    if (matcherl.find() || matcherl_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                        orderModifier.add(products.get(j).getProducts().get(k).getModifiers().get(l));
+                                    }
+
+                                }
+                            }
+
+                        }
+                        for (int k = 0; k < products.get(j).getChildren().size(); k++) {
+                            Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1 = pattern1.matcher(words[i].toLowerCase());
+
+                            Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getSpanishName() != null ? products.get(j).getChildren().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1_span = pattern1_span.matcher(words[i].toLowerCase());
+
+                            if (matcher1.find() || matcher1_span.find()) {
+                                ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                ChildWithQuantity childWithQuantity = new ChildWithQuantity();
+                                childWithQuantity.setChild(products.get(j).getChildren().get(k));
+                                childWithQuantity.setQuantity(0);
+                                orderChild.add(childWithQuantity);
+                            } else {
+                                for (int m = 0; m < products.get(j).getChildren().get(k).getChildren().size(); m++) {
+                                    Pattern pattern_m = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getChildren().get(m).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m = pattern_m.matcher(words[i].toLowerCase());
+
+                                    Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getChildren().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getChildren().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m_span = pattern_m_span.matcher(words[i].toLowerCase());
+
+
+                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                        Child__1WithQuantity child__1WithQuantity=new  Child__1WithQuantity();
+                                        child__1WithQuantity.setQuantity(0);
+                                        child__1WithQuantity.setChild__1(products.get(j).getChildren().get(k).getChildren().get(m));
+                                        orderSecondChild.add(child__1WithQuantity);
+                                    }
+
+                                }
+                                for (int m = 0; m < products.get(j).getChildren().get(k).getProducts().size(); m++) {
+                                    Pattern pattern_m = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getProducts().get(m).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m = pattern_m.matcher(words[i].toLowerCase());
+
+                                    Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m_span = pattern_m_span.matcher(words[i].toLowerCase());
+
+                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+
+                                        ProductWithQuantity productWithQuantity = new ProductWithQuantity();
+                                        productWithQuantity.setQuantity(0);
+                                        productWithQuantity.setProduct(products.get(j).getChildren().get(k).getProducts().get(m));
+
+                                        orderSecondProduct.add(productWithQuantity);
+                                    }
+
+                                }
+                            }
+                        }
+
+                    }
+                } else {
+
+                    for (int j = 0; j < products.size(); j++) {
+                        ErrorMessage.E("Search Name>>> : " + words[i]);
+
+                        Pattern pattern = Pattern.compile("\\b" + Pattern.quote(products.get(j).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                        Matcher matcher = pattern.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                        Pattern pattern_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getSpanishName() != null ? products.get(j).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                        Matcher matcher_span = pattern_span.matcher(words[i].toLowerCase());
+
+                        if (matcher.find() || matcher_span.find()) {
+                            ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                            orderMenus.add(products.get(j));
+                        }
+
+                        for (int k = 0; k < products.get(j).getProducts().size(); k++) {
+                            Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1 = pattern1.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                            Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSpanishName() != null ? products.get(j).getProducts().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1_span = pattern1_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                            if (matcher1.find() || matcher1_span.find()) {
+                                if (isNumeric(words[i - 1])) {
+                                    ProductWithQuantity product = new ProductWithQuantity();
+                                    product.setQuantity(Integer.parseInt(words[i - 1]));
+                                    product.setProduct(products.get(j).getProducts().get(k));
+                                    orderProduct.add(product);
+                                } else {
+                                    ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                    ProductWithQuantity product = new ProductWithQuantity();
+                                    product.setQuantity(0);
+                                    product.setProduct(products.get(j).getProducts().get(k));
+                                    orderProduct.add(product);
+
+                                }
+                            } else {
+                                for (int l = 0; l < products.get(j).getProducts().get(k).getSizes().size(); l++) {
+                                    Pattern patternl = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSizes().get(l).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl = patternl.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    Pattern patternl_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSizes().get(l).getSpanishName() != null ? products.get(j).getProducts().get(k).getSizes().get(l).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl_span = patternl_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    if (matcherl.find() || matcherl_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                        orderSize.add(products.get(j).getProducts().get(k).getSizes().get(l));
+                                    }
+
+                                }
+                                for (int l = 0; l < products.get(j).getProducts().get(k).getModifiers().size(); l++) {
+                                    Pattern patternl = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getModifiers().get(l).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl = patternl.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    Pattern patternl_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getModifiers().get(l).getSpanishName() != null ? products.get(j).getProducts().get(k).getModifiers().get(l).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcherl_span = patternl_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    if (matcherl.find() || matcherl_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                        orderModifier.add(products.get(j).getProducts().get(k).getModifiers().get(l));
+                                    }
+
+                                }
+                            }
+
+                        }
+                        for (int k = 0; k < products.get(j).getChildren().size(); k++) {
+                            Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1 = pattern1.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                            Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getSpanishName() != null ? products.get(j).getChildren().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                            Matcher matcher1_span = pattern1_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                            if (matcher1.find() || matcher1_span.find()) {
+                                ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                // orderChild.add(products.get(j).getChildren().get(k));
+                                if (isNumeric(words[i - 1])) {
+                                    ChildWithQuantity childWithQuantity = new ChildWithQuantity();
+                                    childWithQuantity.setChild(products.get(j).getChildren().get(k));
+                                    childWithQuantity.setQuantity(Integer.parseInt(words[i - 1]));
+                                    orderChild.add(childWithQuantity);
+                                } else {
+
+                                    ChildWithQuantity childWithQuantity = new ChildWithQuantity();
+                                    childWithQuantity.setChild(products.get(j).getChildren().get(k));
+                                    childWithQuantity.setQuantity(0);
+                                    orderChild.add(childWithQuantity);
+                                }
+
+                            } else {
+                                for (int m = 0; m < products.get(j).getChildren().get(k).getChildren().size(); m++) {
+                                    Pattern pattern_m = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getChildren().get(m).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m = pattern_m.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getChildren().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getChildren().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m_span = pattern_m_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                       // orderSecondChild.add(products.get(j).getChildren().get(k).getChildren().get(m));
+                                        if (isNumeric(words[i - 1])) {
+                                            Child__1WithQuantity child__1WithQuantity = new Child__1WithQuantity();
+                                            child__1WithQuantity.setQuantity(Integer.parseInt(words[i - 1]));
+                                            child__1WithQuantity.setChild__1(products.get(j).getChildren().get(k).getChildren().get(m));
+                                            orderSecondChild.add(child__1WithQuantity);
+                                        }
+                                        else {
+                                            Child__1WithQuantity child__1WithQuantity = new Child__1WithQuantity();
+                                            child__1WithQuantity.setQuantity(0);
+                                            child__1WithQuantity.setChild__1(products.get(j).getChildren().get(k).getChildren().get(m));
+                                            orderSecondChild.add(child__1WithQuantity);
+                                        }
+                                    }
+
+                                }
+                                for (int m = 0; m < products.get(j).getChildren().get(k).getProducts().size(); m++) {
+                                    Pattern pattern_m = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getProducts().get(m).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m = pattern_m.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
+                                    Matcher matcher_m_span = pattern_m_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
+
+                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                        ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                        /* orderSecondProduct.add(products.get(j).getChildren().get(k).getProducts().get(m));
+                                         */
+                                        if (matcher1.find() || matcher1_span.find()) {
+                                            if (isNumeric(words[i - 1])) {
+                                                ProductWithQuantity product = new ProductWithQuantity();
+                                                product.setQuantity(Integer.parseInt(words[i - 1]));
+                                                product.setProduct(products.get(j).getChildren().get(k).getProducts().get(m));
+                                                orderSecondProduct.add(product);
+                                            } else {
+                                                ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                                                ProductWithQuantity product = new ProductWithQuantity();
+                                                product.setQuantity(0);
+                                                product.setProduct(products.get(j).getChildren().get(k).getProducts().get(m));
+                                                orderSecondProduct.add(product);
+
+                                            }
+                                        }
+
+
+                                    }
+
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+            ErrorMessage.E("Product found: >>>>orderMenus>>>" + orderMenus.size());
+            ErrorMessage.E("Product found: >>>>orderProduct>>>" + orderProduct.size());
+            ErrorMessage.E("Product found: >>>>orderSize>>>" + orderSize.size());
+            ErrorMessage.E("Product found: >>>>orderModifier>>>" + orderModifier.size());
+            ErrorMessage.E("Product found: >>>>orderChild>>>" + orderChild.size());
+            ErrorMessage.E("Product found: >>>>orderSecondChild>>>" + orderSecondChild.size());
+            ErrorMessage.E("Product found: >>>>orderSecondProduct>>>" + orderSecondProduct.size());
+
+
+            if (orderMenus.size() > 0) {
+                binding.searchTxt.setVisibility(View.GONE);
+                binding.mainMenuLayout.setVisibility(View.VISIBLE);
+                binding.listRcv.setVisibility(View.VISIBLE);
+                mainMenuAdapter = new MainMenuAdapter(MainActivity.this, orderMenus);
+                binding.listRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.listRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.listRcv.scheduleLayoutAnimation();
+                binding.listRcv.setNestedScrollingEnabled(false);
+                binding.listRcv.setAdapter(mainMenuAdapter);
+                binding.listRcv.setHasFixedSize(true);
+                mainMenuAdapter.notifyDataSetChanged();
+            }
+            if (orderChild.size() > 0) {
+                binding.searchTxt.setVisibility(View.GONE);
+                binding.mainMenuChildLayout.setVisibility(View.VISIBLE);
+                mainMeuChildrenAdapter = new MainMeuChildrenAdapter(MainActivity.this, orderChild);
+                binding.subcategoryListRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.subcategoryListRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.subcategoryListRcv.scheduleLayoutAnimation();
+                binding.subcategoryListRcv.setNestedScrollingEnabled(false);
+                binding.subcategoryListRcv.setAdapter(mainMeuChildrenAdapter);
+                binding.subcategoryListRcv.setHasFixedSize(true);
+                mainMeuChildrenAdapter.notifyDataSetChanged();
+            }
+            if (orderProduct.size() > 0) {
+                binding.searchTxt.setVisibility(View.GONE);
+                binding.mainMenuProductLayout.setVisibility(View.VISIBLE);
+                mainMeuProductAdapter = new MainManuProductAdapter(MainActivity.this, orderProduct);
+                binding.mainManuProductsListRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.mainManuProductsListRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.mainManuProductsListRcv.scheduleLayoutAnimation();
+                binding.mainManuProductsListRcv.setNestedScrollingEnabled(false);
+                binding.mainManuProductsListRcv.setAdapter(mainMeuProductAdapter);
+                binding.mainManuProductsListRcv.setHasFixedSize(true);
+                mainMeuProductAdapter.notifyDataSetChanged();
+            }
+            if (orderSecondChild.size() > 0) {
+                binding.searchTxt.setVisibility(View.GONE);
+                binding.secondSubCategoryLayout.setVisibility(View.VISIBLE);
+                secondSubCategoryAdapter = new SecondSubCategoryAdapter(MainActivity.this, orderSecondChild);
+                binding.secondSubCategoryListRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.secondSubCategoryListRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.secondSubCategoryListRcv.scheduleLayoutAnimation();
+                binding.secondSubCategoryListRcv.setNestedScrollingEnabled(false);
+                binding.secondSubCategoryListRcv.setAdapter(secondSubCategoryAdapter);
+                binding.secondSubCategoryListRcv.setHasFixedSize(true);
+                secondSubCategoryAdapter.notifyDataSetChanged();
+            }
+            if (orderSecondProduct.size() > 0) {
+                binding.searchTxt.setVisibility(View.GONE);
+                binding.secondSubCategoryLayout.setVisibility(View.VISIBLE);
+                secondSubProductAdapter = new SecondSubProductAdapter(MainActivity.this, orderSecondProduct);
+                binding.secondSubCategoryProductsListRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.secondSubCategoryProductsListRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.secondSubCategoryProductsListRcv.scheduleLayoutAnimation();
+                binding.secondSubCategoryProductsListRcv.setNestedScrollingEnabled(false);
+                binding.secondSubCategoryProductsListRcv.setAdapter(secondSubProductAdapter);
+                binding.secondSubCategoryProductsListRcv.setHasFixedSize(true);
+                secondSubProductAdapter.notifyDataSetChanged();
+            }
+
+            if (orderMenus.size() > 0 && orderChild.size() > 0 && orderSecondChild.size() > 0 && orderSecondChild.size() > 0 && orderSecondProduct.size() > 0) {
+                binding.searchTxt.setVisibility(View.VISIBLE);
+                binding.listRcv.setVisibility(View.GONE);
+                binding.searchTxt.setText("Item not found, please try again.");
+
+            }
+
+
+        } catch (Exception e) {
+            Log.e("print item <<<e>>>>", "" + e.toString());
         }
     }
 
@@ -885,71 +1356,5 @@ public class MainActivity extends AppCompatActivity {
         } catch (NumberFormatException e) {
             return false;
         }
-    }
-}
-
-class RestaurantOrder {
-    private int quantity;
-    private String item;
-
-    public RestaurantOrder(int quantity, String item) {
-        this.quantity = quantity;
-        this.item = item;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public String getItem() {
-        return item;
-    }
-}
-
-class MenuItem {
-    @SerializedName("category_id")
-    private String categoryId;
-
-    @SerializedName("category_name")
-    private String categoryName;
-
-    private String price;
-
-    @SerializedName("subCategory")
-    private List<SubCategory> subCategory;
-
-    // Getters and setters
-    // You can generate them automatically using your IDE or manually
-
-    @Override
-    public String toString() {
-        return "MenuItem{" +
-                "categoryId='" + categoryId + '\'' +
-                ", categoryName='" + categoryName + '\'' +
-                ", price='" + price + '\'' +
-                ", subCategory=" + subCategory +
-                '}';
-    }
-}
-
-class SubCategory {
-    @SerializedName("subcategory_id")
-    private String subcategoryId;
-
-    @SerializedName("subcategory_name")
-    private String subcategoryName;
-
-    @SerializedName("subcategory_price")
-    private String subcategoryPrice;
-
-    // Getters and setters
-
-    @Override
-    public String toString() {
-        return "SubCategory{" +
-                "subcategoryId='" + subcategoryId + '\'' +
-                ", subcategoryName='" + subcategoryName + '\'' +
-                ", subcategoryPrice='" + subcategoryPrice + '\'' +
-                '}';
     }
 }

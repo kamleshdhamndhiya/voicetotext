@@ -32,7 +32,7 @@ public class AppConfig_second {
                         .cache(null)
                         .build();
                 retrofit = new Retrofit.Builder()
-                        .baseUrl(Constant.BASE_URL_)
+                        .baseUrl(Constant.MENUS_BASE_URL_)
                         .client(okHttpClient)
                         .addConverterFactory(GsonConverterFactory.create())
                         .build();
