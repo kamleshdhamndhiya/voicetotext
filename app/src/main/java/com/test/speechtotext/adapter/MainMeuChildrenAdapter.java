@@ -2,6 +2,7 @@ package com.test.speechtotext.adapter;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,12 +15,14 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.test.speechtotext.ItemDetailPage;
 import com.test.speechtotext.R;
 import com.test.speechtotext.model.newModel.Child;
 import com.test.speechtotext.model.newModel.ChildWithQuantity;
 import com.test.speechtotext.model.newModel.Menu;
 import com.test.speechtotext.model.newModel.Product.Modifier;
 import com.test.speechtotext.model.newModel.Product.Size;
+import com.test.speechtotext.utility.ErrorMessage;
 
 import java.util.List;
 
@@ -50,12 +53,22 @@ public class MainMeuChildrenAdapter extends RecyclerView.Adapter<MainMeuChildren
         if (itemSelected.getChild().getName() != null && !itemSelected.getChild().getName().equals("")) {
             if(itemSelected.getQuantity()>0){
                 holder.address_tv.setText("" + Position + ". " + itemSelected.getChild().getName()+"  "+itemSelected.getQuantity()+"* ($"+itemSelected.getChild().getPrice()+")");
-
             }
             else {
                 holder.address_tv.setText("" + Position + ". " + itemSelected.getChild().getName());
             }
         }
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if ((itemSelected.getChild().getChildren()!=null && itemSelected.getChild().getChildren().size()>0) || (itemSelected.getChild().getProducts()!=null && itemSelected.getChild().getProducts().size()>0)) {
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("main_menu_child", itemSelected.getChild());
+                    ErrorMessage.I(context, ItemDetailPage.class, bundle);
+                }
+            }
+        });
 
     }
 

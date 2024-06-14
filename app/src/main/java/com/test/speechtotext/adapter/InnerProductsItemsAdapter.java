@@ -10,18 +10,18 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.test.speechtotext.R;
-import com.test.speechtotext.model.newModel.Product.Modifier;
-import com.test.speechtotext.model.newModel.Product.Size;
+import com.test.speechtotext.model.newModel.Child;
+import com.test.speechtotext.model.newModel.Product.Product;
 
 import java.util.List;
 
-public class SizesAdapter extends RecyclerView.Adapter<SizesAdapter.MyViewHolder> {
+public class InnerProductsItemsAdapter extends RecyclerView.Adapter<InnerProductsItemsAdapter.MyViewHolder> {
 
     Context context;
-    List<Size> CustomerLists;
+    List<Product> CustomerLists;
 
 
-    public SizesAdapter(Context context, List<Size> customerList) {
+    public InnerProductsItemsAdapter(Context context, List<Product> customerList) {
         this.context = context;
         this.CustomerLists = customerList;
 
@@ -29,22 +29,22 @@ public class SizesAdapter extends RecyclerView.Adapter<SizesAdapter.MyViewHolder
     }
 
     @Override
-    public SizesAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public InnerProductsItemsAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.sizes_layout, parent, false);
-        return new SizesAdapter.MyViewHolder(itemView);
+                .inflate(R.layout.address_list_adapter, parent, false);
+        return new InnerProductsItemsAdapter.MyViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(final SizesAdapter.MyViewHolder holder, final int position) {
+    public void onBindViewHolder(final InnerProductsItemsAdapter.MyViewHolder holder, final int position) {
         int Position = position + 1;
-        Size itemSelected = CustomerLists.get(position);
+        Product itemSelected = CustomerLists.get(position);
         holder.right_aarow_img.setVisibility(View.GONE);
         if (itemSelected.getName() != null && !itemSelected.getName().equals("")) {
             holder.address_tv.setText("" + Position + ". " + itemSelected.getName());
+        }if (itemSelected.getPrice() != null && !itemSelected.getPrice().equals("")) {
+            holder.address_tv.setText("" + holder.address_tv.getText().toString()+" $"+itemSelected.getPrice());
         }
-
-
 
     }
 
@@ -79,7 +79,6 @@ public class SizesAdapter extends RecyclerView.Adapter<SizesAdapter.MyViewHolder
 
         }
     }
-
 
 
 }

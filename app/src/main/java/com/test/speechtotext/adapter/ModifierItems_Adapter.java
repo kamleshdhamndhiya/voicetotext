@@ -7,21 +7,24 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.test.speechtotext.MainActivity;
 import com.test.speechtotext.R;
+import com.test.speechtotext.model.newModel.Product.Child;
 import com.test.speechtotext.model.newModel.Product.Modifier;
-import com.test.speechtotext.model.newModel.Product.Size;
 
 import java.util.List;
 
-public class SizesAdapter extends RecyclerView.Adapter<SizesAdapter.MyViewHolder> {
+public class ModifierItems_Adapter  extends RecyclerView.Adapter<ModifierItems_Adapter.MyViewHolder> {
 
     Context context;
-    List<Size> CustomerLists;
+    List<Child> CustomerLists;
 
 
-    public SizesAdapter(Context context, List<Size> customerList) {
+    public ModifierItems_Adapter(Context context, List<Child> customerList) {
         this.context = context;
         this.CustomerLists = customerList;
 
@@ -29,16 +32,16 @@ public class SizesAdapter extends RecyclerView.Adapter<SizesAdapter.MyViewHolder
     }
 
     @Override
-    public SizesAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ModifierItems_Adapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.sizes_layout, parent, false);
-        return new SizesAdapter.MyViewHolder(itemView);
+        return new ModifierItems_Adapter.MyViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(final SizesAdapter.MyViewHolder holder, final int position) {
+    public void onBindViewHolder(final ModifierItems_Adapter.MyViewHolder holder, final int position) {
         int Position = position + 1;
-        Size itemSelected = CustomerLists.get(position);
+        Child itemSelected = CustomerLists.get(position);
         holder.right_aarow_img.setVisibility(View.GONE);
         if (itemSelected.getName() != null && !itemSelected.getName().equals("")) {
             holder.address_tv.setText("" + Position + ". " + itemSelected.getName());
@@ -79,7 +82,6 @@ public class SizesAdapter extends RecyclerView.Adapter<SizesAdapter.MyViewHolder
 
         }
     }
-
 
 
 }

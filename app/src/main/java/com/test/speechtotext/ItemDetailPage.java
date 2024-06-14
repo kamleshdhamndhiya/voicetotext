@@ -9,10 +9,15 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.test.speechtotext.adapter.InnerProductItemAdapter;
+import com.test.speechtotext.adapter.InnerProductsItemsAdapter;
 import com.test.speechtotext.adapter.MainMeuChildrenAdapter;
+import com.test.speechtotext.adapter.SecondCategoryAdapter;
+import com.test.speechtotext.adapter.SecondCategoryProductAdapter;
+import com.test.speechtotext.adapter.SecondSubCategoryAdapter;
 import com.test.speechtotext.adapter.SecondSubProductAdapter;
 import com.test.speechtotext.databinding.ActivityItemDetailPageBinding;
 import com.test.speechtotext.databinding.ActivityMainBinding;
+import com.test.speechtotext.model.newModel.Child;
 import com.test.speechtotext.model.newModel.Menu;
 
 public class ItemDetailPage extends AppCompatActivity {
@@ -43,9 +48,9 @@ public class ItemDetailPage extends AppCompatActivity {
                     binding.itemRcv.setAdapter(innerProductItemAdapter);
                     binding.itemRcv.setHasFixedSize(true);
                     innerProductItemAdapter.notifyDataSetChanged();
-                }/*else if (itemSelected.getProducts().size() > 0) {
+                }else if (itemSelected.getProducts().size() > 0) {
                     binding.titleTv.setText("Menu SubCategory Product");
-                    SecondSubProductAdapter innerProductItemAdapter = new SecondSubProductAdapter(ItemDetailPage.this, itemSelected.getProducts());
+                    InnerProductsItemsAdapter innerProductItemAdapter = new InnerProductsItemsAdapter(ItemDetailPage.this, itemSelected.getProducts());
                     binding.itemRcv.setLayoutManager(new LinearLayoutManager(ItemDetailPage.this, RecyclerView.VERTICAL, false));
                     binding.itemRcv.setItemAnimator(new DefaultItemAnimator());
                     binding.itemRcv.scheduleLayoutAnimation();
@@ -53,7 +58,33 @@ public class ItemDetailPage extends AppCompatActivity {
                     binding.itemRcv.setAdapter(innerProductItemAdapter);
                     binding.itemRcv.setHasFixedSize(true);
                     innerProductItemAdapter.notifyDataSetChanged();
-                }*/
+                }
+            }
+
+            else if (bundle.getSerializable("main_menu_child") != null) {
+                Child itemSelected = (Child) bundle.getSerializable("main_menu_child");
+
+                if (itemSelected.getChildren().size() > 0) {
+                    binding.titleTv.setText("Items");
+                    SecondCategoryAdapter innerProductItemAdapter = new SecondCategoryAdapter(ItemDetailPage.this, itemSelected.getChildren());
+                    binding.itemRcv.setLayoutManager(new LinearLayoutManager(ItemDetailPage.this, RecyclerView.VERTICAL, false));
+                    binding.itemRcv.setItemAnimator(new DefaultItemAnimator());
+                    binding.itemRcv.scheduleLayoutAnimation();
+                    binding.itemRcv.setNestedScrollingEnabled(false);
+                    binding.itemRcv.setAdapter(innerProductItemAdapter);
+                    binding.itemRcv.setHasFixedSize(true);
+                    innerProductItemAdapter.notifyDataSetChanged();
+                }else if (itemSelected.getProducts().size() > 0) {
+                    binding.titleTv.setText("Items");
+                    SecondCategoryProductAdapter innerProductItemAdapter = new SecondCategoryProductAdapter(ItemDetailPage.this, itemSelected.getProducts());
+                    binding.itemRcv.setLayoutManager(new LinearLayoutManager(ItemDetailPage.this, RecyclerView.VERTICAL, false));
+                    binding.itemRcv.setItemAnimator(new DefaultItemAnimator());
+                    binding.itemRcv.scheduleLayoutAnimation();
+                    binding.itemRcv.setNestedScrollingEnabled(false);
+                    binding.itemRcv.setAdapter(innerProductItemAdapter);
+                    binding.itemRcv.setHasFixedSize(true);
+                    innerProductItemAdapter.notifyDataSetChanged();
+                }
             }
         }
     }

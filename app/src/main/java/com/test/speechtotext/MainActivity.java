@@ -795,9 +795,9 @@ public class MainActivity extends AppCompatActivity {
                                     Example example = gson.fromJson(jsonArray.getString(i), Example.class);
                                     menuItems.add(example.getMenus());
                                 }*/
-
-                                extractProductAndMatch("2 CAPUCHINO with MILK ", example.getMenus());
-
+                               /* binding.actualSearchTxt.setText("I would like a Cappuccinos");
+                                extractProductAndMatch("I would like a Cappuccinos", example.getMenus());
+*/
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 ErrorMessage.E("Exception" + e.toString());
@@ -1015,7 +1015,6 @@ public class MainActivity extends AppCompatActivity {
                             ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                             orderMenus.add(products.get(j));
                         }
-
                         for (int k = 0; k < products.get(j).getProducts().size(); k++) {
                             Pattern pattern1 = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
                             Matcher matcher1 = pattern1.matcher(words[i].toLowerCase());
@@ -1028,7 +1027,19 @@ public class MainActivity extends AppCompatActivity {
                                 ProductWithQuantity productWithQuantity = new ProductWithQuantity();
                                 productWithQuantity.setQuantity(0);
                                 productWithQuantity.setProduct(products.get(j).getProducts().get(k));
-                                orderProduct.add(productWithQuantity);
+
+
+                                Boolean productExists=false;
+                                for (ProductWithQuantity p : orderProduct) {
+                                    if (p.getProduct().getName().equals(products.get(j).getProducts().get(k).getName())) {
+                                        productExists = true;
+                                        break;
+                                    }
+                                }
+                                if(!productExists){
+                                    orderProduct.add(productWithQuantity);
+                                }
+
                             } else {
                                 for (int l = 0; l < products.get(j).getProducts().get(k).getSizes().size(); l++) {
                                     Pattern patternl = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSizes().get(l).getName().toLowerCase()) + "\\b", Pattern.CASE_INSENSITIVE);
@@ -1066,8 +1077,8 @@ public class MainActivity extends AppCompatActivity {
                             Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getSpanishName() != null ? products.get(j).getChildren().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                             Matcher matcher1_span = pattern1_span.matcher(words[i].toLowerCase());
 
-                            if (matcher1.find() || matcher1_span.find()) {
-                                ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
+                            if (matcher1.find() /*|| matcher1_span.find()*/) {
+                                ErrorMessage.E("Ordered orderChild Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                 ChildWithQuantity childWithQuantity = new ChildWithQuantity();
                                 childWithQuantity.setChild(products.get(j).getChildren().get(k));
                                 childWithQuantity.setQuantity(0);
@@ -1081,12 +1092,23 @@ public class MainActivity extends AppCompatActivity {
                                     Matcher matcher_m_span = pattern_m_span.matcher(words[i].toLowerCase());
 
 
-                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                    if (matcher_m.find() /*|| matcher_m_span.find()*/) {
                                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                         Child__1WithQuantity child__1WithQuantity=new  Child__1WithQuantity();
                                         child__1WithQuantity.setQuantity(0);
                                         child__1WithQuantity.setChild__1(products.get(j).getChildren().get(k).getChildren().get(m));
-                                        orderSecondChild.add(child__1WithQuantity);
+
+
+                                        Boolean productExists=false;
+                                        for (Child__1WithQuantity p : orderSecondChild) {
+                                            if (p.getChild__1().getName().equals(products.get(j).getChildren().get(k).getChildren().get(m).getName())) {
+                                                productExists = true;
+                                                break;
+                                            }
+                                        }
+                                        if(!productExists){
+                                            orderSecondChild.add(child__1WithQuantity);
+                                        }
                                     }
 
                                 }
@@ -1097,7 +1119,7 @@ public class MainActivity extends AppCompatActivity {
                                     Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                                     Matcher matcher_m_span = pattern_m_span.matcher(words[i].toLowerCase());
 
-                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                    if (matcher_m.find() /*|| matcher_m_span.find()*/) {
                                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
 
                                         ProductWithQuantity productWithQuantity = new ProductWithQuantity();
@@ -1112,7 +1134,8 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                     }
-                } else {
+                }
+                else {
 
                     for (int j = 0; j < products.size(); j++) {
                         ErrorMessage.E("Search Name>>> : " + words[i]);
@@ -1123,9 +1146,20 @@ public class MainActivity extends AppCompatActivity {
                         Pattern pattern_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getSpanishName() != null ? products.get(j).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                         Matcher matcher_span = pattern_span.matcher(words[i].toLowerCase());
 
-                        if (matcher.find() || matcher_span.find()) {
+                        if (matcher.find() /*|| matcher_span.find()*/) {
                             ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
-                            orderMenus.add(products.get(j));
+
+
+                            Boolean productExists=false;
+                            for (com.test.speechtotext.model.newModel.Menu p : orderMenus) {
+                                if (p.getName().equals(products.get(j).getName())) {
+                                    productExists = true;
+                                    break;
+                                }
+                            }
+                            if(!productExists){
+                                orderMenus.add(products.get(j));
+                            }
                         }
 
                         for (int k = 0; k < products.get(j).getProducts().size(); k++) {
@@ -1135,18 +1169,43 @@ public class MainActivity extends AppCompatActivity {
                             Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSpanishName() != null ? products.get(j).getProducts().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                             Matcher matcher1_span = pattern1_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
 
-                            if (matcher1.find() || matcher1_span.find()) {
+                            if (matcher1.find() /*|| matcher1_span.find()*/) {
                                 if (isNumeric(words[i - 1])) {
                                     ProductWithQuantity product = new ProductWithQuantity();
                                     product.setQuantity(Integer.parseInt(words[i - 1]));
                                     product.setProduct(products.get(j).getProducts().get(k));
-                                    orderProduct.add(product);
+
+
+                                    Boolean productExists=false;
+                                    for (ProductWithQuantity p : orderProduct) {
+                                        if (p.getProduct().getName().equals(products.get(j).getProducts().get(k).getName())) {
+                                            productExists = true;
+                                            break;
+                                        }
+                                    }
+                                    if(!productExists){
+                                        orderProduct.add(product);
+                                    }
+
+
+
                                 } else {
                                     ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                     ProductWithQuantity product = new ProductWithQuantity();
                                     product.setQuantity(0);
                                     product.setProduct(products.get(j).getProducts().get(k));
                                     orderProduct.add(product);
+
+                                    Boolean productExists=false;
+                                    for (ProductWithQuantity p : orderProduct) {
+                                        if (p.getProduct().getName().equals(products.get(j).getProducts().get(k).getName())) {
+                                            productExists = true;
+                                            break;
+                                        }
+                                    }
+                                    if(!productExists){
+                                        orderProduct.add(product);
+                                    }
 
                                 }
                             } else {
@@ -1157,7 +1216,7 @@ public class MainActivity extends AppCompatActivity {
                                     Pattern patternl_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getProducts().get(k).getSizes().get(l).getSpanishName() != null ? products.get(j).getProducts().get(k).getSizes().get(l).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                                     Matcher matcherl_span = patternl_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
 
-                                    if (matcherl.find() || matcherl_span.find()) {
+                                    if (matcherl.find() /*|| matcherl_span.find()*/) {
                                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                         orderSize.add(products.get(j).getProducts().get(k).getSizes().get(l));
                                     }
@@ -1186,20 +1245,42 @@ public class MainActivity extends AppCompatActivity {
                             Pattern pattern1_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getSpanishName() != null ? products.get(j).getChildren().get(k).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                             Matcher matcher1_span = pattern1_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
 
-                            if (matcher1.find() || matcher1_span.find()) {
+                            if (matcher1.find() /*|| matcher1_span.find()*/) {
                                 ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                 // orderChild.add(products.get(j).getChildren().get(k));
                                 if (isNumeric(words[i - 1])) {
                                     ChildWithQuantity childWithQuantity = new ChildWithQuantity();
                                     childWithQuantity.setChild(products.get(j).getChildren().get(k));
                                     childWithQuantity.setQuantity(Integer.parseInt(words[i - 1]));
-                                    orderChild.add(childWithQuantity);
+
+                                    Boolean productExists=false;
+                                    for (ChildWithQuantity p : orderChild) {
+                                        if (p.getChild().getName().equals(products.get(j).getChildren().get(k).getName())) {
+                                            productExists = true;
+                                            break;
+                                        }
+                                    }
+                                    if(!productExists){
+                                        orderChild.add(childWithQuantity);
+                                    }
+
+
                                 } else {
 
                                     ChildWithQuantity childWithQuantity = new ChildWithQuantity();
                                     childWithQuantity.setChild(products.get(j).getChildren().get(k));
                                     childWithQuantity.setQuantity(0);
-                                    orderChild.add(childWithQuantity);
+
+                                    Boolean productExists=false;
+                                    for (ChildWithQuantity p : orderChild) {
+                                        if (p.getChild().getName().equals(products.get(j).getChildren().get(k).getName())) {
+                                            productExists = true;
+                                            break;
+                                        }
+                                    }
+                                    if(!productExists){
+                                        orderChild.add(childWithQuantity);
+                                    }
                                 }
 
                             } else {
@@ -1210,20 +1291,42 @@ public class MainActivity extends AppCompatActivity {
                                     Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getChildren().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getChildren().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                                     Matcher matcher_m_span = pattern_m_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
 
-                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                    if (matcher_m.find() /*|| matcher_m_span.find()*/) {
                                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                        // orderSecondChild.add(products.get(j).getChildren().get(k).getChildren().get(m));
                                         if (isNumeric(words[i - 1])) {
                                             Child__1WithQuantity child__1WithQuantity = new Child__1WithQuantity();
                                             child__1WithQuantity.setQuantity(Integer.parseInt(words[i - 1]));
                                             child__1WithQuantity.setChild__1(products.get(j).getChildren().get(k).getChildren().get(m));
-                                            orderSecondChild.add(child__1WithQuantity);
+
+                                            Boolean productExists=false;
+                                            for (Child__1WithQuantity p : orderSecondChild) {
+                                                if (p.getChild__1().getName().equals(products.get(j).getChildren().get(k).getChildren().get(m).getName())) {
+                                                    productExists = true;
+                                                    break;
+                                                }
+                                            }
+                                            if(!productExists){
+                                                orderSecondChild.add(child__1WithQuantity);
+                                            }
+
                                         }
                                         else {
                                             Child__1WithQuantity child__1WithQuantity = new Child__1WithQuantity();
                                             child__1WithQuantity.setQuantity(0);
                                             child__1WithQuantity.setChild__1(products.get(j).getChildren().get(k).getChildren().get(m));
                                             orderSecondChild.add(child__1WithQuantity);
+
+                                            Boolean productExists=false;
+                                            for (Child__1WithQuantity p : orderSecondChild) {
+                                                if (p.getChild__1().getName().equals(products.get(j).getChildren().get(k).getChildren().get(m).getName())) {
+                                                    productExists = true;
+                                                    break;
+                                                }
+                                            }
+                                            if(!productExists){
+                                                orderSecondChild.add(child__1WithQuantity);
+                                            }
                                         }
                                     }
 
@@ -1235,10 +1338,10 @@ public class MainActivity extends AppCompatActivity {
                                     Pattern pattern_m_span = Pattern.compile("\\b" + Pattern.quote(products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName() != null ? products.get(j).getChildren().get(k).getProducts().get(m).getSpanishName().toLowerCase() : "") + "\\b", Pattern.CASE_INSENSITIVE);
                                     Matcher matcher_m_span = pattern_m_span.matcher(words[i - 1] + " " + words[i].toLowerCase());
 
-                                    if (matcher_m.find() || matcher_m_span.find()) {
+                                    if (matcher_m.find() /*|| matcher_m_span.find()*/) {
                                         ErrorMessage.E("Ordered Quantity: " + products.get(j).getName() + ", Product: " + words[i]);
                                         /* orderSecondProduct.add(products.get(j).getChildren().get(k).getProducts().get(m));
-                                         */
+                                        */
                                         if (matcher1.find() || matcher1_span.find()) {
                                             if (isNumeric(words[i - 1])) {
                                                 ProductWithQuantity product = new ProductWithQuantity();
