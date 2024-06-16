@@ -1,6 +1,7 @@
 package com.test.speechtotext.adapter;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,10 +9,12 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.test.speechtotext.ItemDetailPage;
 import com.test.speechtotext.R;
 import com.test.speechtotext.model.newModel.Child;
 import com.test.speechtotext.model.newModel.Child__1;
 import com.test.speechtotext.model.newModel.Child__1WithQuantity;
+import com.test.speechtotext.utility.ErrorMessage;
 
 import java.util.List;
 
@@ -39,15 +42,29 @@ public class SecondSubCategoryAdapter extends RecyclerView.Adapter<SecondSubCate
     public void onBindViewHolder(final SecondSubCategoryAdapter.MyViewHolder holder, final int position) {
         int Position = position + 1;
         Child__1WithQuantity itemSelected = CustomerLists.get(position);
-        if (itemSelected.getChild__1().getName() != null && !itemSelected.getChild__1().getName().equals("")&& itemSelected.getChild__1().getPrice()!=null) {
-           if(itemSelected.getQuantity()>0){
-               holder.address_tv.setText("" + Position + ". " + itemSelected.getChild__1().getName() +"  "+itemSelected.getQuantity()+ " * ($" + itemSelected.getChild__1().getPrice()+")");
+       try {
+           if (itemSelected.getChild__1().getName() != null && !itemSelected.getChild__1().getName().equals("") && itemSelected.getChild__1().getPrice() != null) {
 
+               if (itemSelected.getQuantity() > 0) {
+                   holder.address_tv.setText("" + Position + ". " + itemSelected.getChild__1().getName() + "  " + itemSelected.getQuantity() + " * ($" + itemSelected.getChild__1().getPrice() + ")");
+               } else {
+                   holder.address_tv.setText("" + Position + ". " + itemSelected.getChild__1().getName() + "  $" + itemSelected.getChild__1().getPrice());
+               }
            }
-           else {
-               holder.address_tv.setText("" + Position + ". " + itemSelected.getChild__1().getName() + "  $" + itemSelected.getChild__1().getPrice());
-           }
-        }
+       }catch (Exception e){}
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if ((itemSelected.getChild__1()!=null && itemSelected.getChild__1().getChildren().size()>0) || (itemSelected.getChild__1()!=null && itemSelected.getChild__1().getProducts().size()>0)) {
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("menu_child_quantity", itemSelected);
+                    ErrorMessage.I(context, ItemDetailPage.class, bundle);
+
+                }
+            }
+        });
+
 
     }
 

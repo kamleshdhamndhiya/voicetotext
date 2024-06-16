@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
+import com.test.speechtotext.adapter.InnerProductItemAdapter;
 import com.test.speechtotext.adapter.ItemListAdapter;
 import com.test.speechtotext.adapter.MainManuProductAdapter;
 import com.test.speechtotext.adapter.MainMenuAdapter;
@@ -795,9 +796,10 @@ public class MainActivity extends AppCompatActivity {
                                     Example example = gson.fromJson(jsonArray.getString(i), Example.class);
                                     menuItems.add(example.getMenus());
                                 }*/
-                               /* binding.actualSearchTxt.setText("I would like a Cappuccinos");
-                                extractProductAndMatch("I would like a Cappuccinos", example.getMenus());
-*/
+                               /* binding.actualSearchTxt.setText("I would like a Americanos");
+                                extractProductAndMatch("I would like a Americanos" +
+                                        "", example.getMenus());*/
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 ErrorMessage.E("Exception" + e.toString());
@@ -1380,15 +1382,24 @@ public class MainActivity extends AppCompatActivity {
             if (orderMenus.size() > 0) {
                 binding.searchTxt.setVisibility(View.GONE);
                 binding.mainMenuLayout.setVisibility(View.VISIBLE);
+                binding.mainMenuTxt.setText("Manu >>> "+orderMenus.get(0).getName());
                 binding.listRcv.setVisibility(View.VISIBLE);
-                mainMenuAdapter = new MainMenuAdapter(MainActivity.this, orderMenus);
+              /*  mainMenuAdapter = new MainMenuAdapter(MainActivity.this, orderMenus);
                 binding.listRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
                 binding.listRcv.setItemAnimator(new DefaultItemAnimator());
                 binding.listRcv.scheduleLayoutAnimation();
                 binding.listRcv.setNestedScrollingEnabled(false);
                 binding.listRcv.setAdapter(mainMenuAdapter);
                 binding.listRcv.setHasFixedSize(true);
-                mainMenuAdapter.notifyDataSetChanged();
+                mainMenuAdapter.notifyDataSetChanged();*/
+                InnerProductItemAdapter  innerProductItemAdapter = new InnerProductItemAdapter(MainActivity.this, orderMenus.get(0).getChildren());
+                binding.listRcv.setLayoutManager(new LinearLayoutManager(MainActivity.this, RecyclerView.VERTICAL, false));
+                binding.listRcv.setItemAnimator(new DefaultItemAnimator());
+                binding.listRcv.scheduleLayoutAnimation();
+                binding.listRcv.setNestedScrollingEnabled(false);
+                binding.listRcv.setAdapter(innerProductItemAdapter);
+                binding.listRcv.setHasFixedSize(true);
+                innerProductItemAdapter.notifyDataSetChanged();
             }
             if (orderChild.size() > 0) {
                 binding.searchTxt.setVisibility(View.GONE);

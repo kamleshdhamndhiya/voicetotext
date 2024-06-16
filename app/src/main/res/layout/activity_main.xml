@@ -96,7 +96,8 @@
                       android:layout_marginRight="20dp"
                       android:textColor="@color/black"
                       android:textStyle="bold"
-                      android:text="Main Manu"/>
+                      android:text="Main Manu"
+                      android:id="@+id/main_menu_txt"/>
 
                <androidx.recyclerview.widget.RecyclerView
                    android:id="@+id/list_rcv"

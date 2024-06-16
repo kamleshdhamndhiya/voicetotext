@@ -43,7 +43,7 @@ public class Child__1 implements Serializable {
     private List<Product> products;
     @SerializedName("children")
     @Expose
-    private List<Object> children;
+    private List<Product> children;
     private Integer quantity;
 
     public Integer getQuantity() {
@@ -141,11 +141,11 @@ public class Child__1 implements Serializable {
         this.products = products;
     }
 
-    public List<Object> getChildren() {
+    public List<Product> getChildren() {
         return children;
     }
 
-    public void setChildren(List<Object> children) {
+    public void setChildren(List<Product> children) {
         this.children = children;
     }
 }

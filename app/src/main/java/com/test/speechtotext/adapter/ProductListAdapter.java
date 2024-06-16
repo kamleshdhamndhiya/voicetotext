@@ -11,24 +11,27 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.test.speechtotext.R;
-import com.test.speechtotext.model.newModel.Child__1;
+import com.test.speechtotext.model.newModel.Child;
+import com.test.speechtotext.model.newModel.Menu;
 import com.test.speechtotext.model.newModel.Product.Modifier;
 import com.test.speechtotext.model.newModel.Product.Product;
+import com.test.speechtotext.model.newModel.Product.ProductWithQuantity;
 import com.test.speechtotext.model.newModel.Product.Size;
 
 import java.util.List;
 
-public class SecondCategoryProductAdapter  extends RecyclerView.Adapter<SecondCategoryProductAdapter.MyViewHolder> {
+public class ProductListAdapter extends RecyclerView.Adapter<ProductListAdapter.MyViewHolder> {
 
     Context context;
     List<Product> CustomerLists;
 
 
-    public SecondCategoryProductAdapter(Context context, List<Product> customerList) {
+    public ProductListAdapter(Context context, List<Product> customerList) {
         this.context = context;
         this.CustomerLists = customerList;
 
@@ -36,24 +39,20 @@ public class SecondCategoryProductAdapter  extends RecyclerView.Adapter<SecondCa
     }
 
     @Override
-    public SecondCategoryProductAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ProductListAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.address_list_adapter, parent, false);
-        return new SecondCategoryProductAdapter.MyViewHolder(itemView);
+        return new ProductListAdapter.MyViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(final SecondCategoryProductAdapter.MyViewHolder holder, final int position) {
+    public void onBindViewHolder(final ProductListAdapter.MyViewHolder holder, final int position) {
         int Position = position + 1;
         Product itemSelected = CustomerLists.get(position);
-        if (itemSelected.getName() != null && !itemSelected.getName().equals("")&& itemSelected.getPrice()!=null) {
-            if(itemSelected.getQuantity()!=null && itemSelected.getQuantity()>0){
-                holder.address_tv.setText("" + Position + ". " + itemSelected.getName() +"  "+itemSelected.getQuantity()+ " * ($" + itemSelected.getPrice()+")");
 
-            }
-            else {
-                holder.address_tv.setText("" + Position + ". " + itemSelected.getName() + "  $" + itemSelected.getPrice());
-            }
+        if (itemSelected.getName() != null && !itemSelected.getName().equals("") && itemSelected.getPrice() != null) {
+            holder.address_tv.setText("" + Position + ". " + itemSelected.getName() + "  $" + itemSelected.getPrice());
+
         }
 
         if (itemSelected.getSizes() != null && itemSelected.getSize() > 0 || itemSelected.getModifiers() != null && itemSelected.getModifiers().size() > 0) {
@@ -86,8 +85,8 @@ public class SecondCategoryProductAdapter  extends RecyclerView.Adapter<SecondCa
             }
         });
 
-
     }
+
     public void modifier(List<Modifier> getModifiers) {
 
         Dialog updateDialog = new Dialog(context);
@@ -161,6 +160,7 @@ public class SecondCategoryProductAdapter  extends RecyclerView.Adapter<SecondCa
             updateDialog.show();
 
     }
+
     @Override
     public int getItemViewType(int position) {
         return position;
@@ -180,17 +180,20 @@ public class SecondCategoryProductAdapter  extends RecyclerView.Adapter<SecondCa
     public class MyViewHolder extends RecyclerView.ViewHolder {
         TextView address_tv;
         TextView subcategory_tv;
+        LinearLayout modifier_layout;
         Button modifier_btn;
         Button sizes_btn;
-        LinearLayout modifier_layout;
+
+
         public MyViewHolder(View view) {
             super(view);
 
             address_tv = view.findViewById(R.id.address_tv);
             subcategory_tv = view.findViewById(R.id.subcategory_tv);
+            modifier_layout = view.findViewById(R.id.modifier_layout);
             modifier_btn = view.findViewById(R.id.modifier_btn);
             sizes_btn = view.findViewById(R.id.sizes_btn);
-            modifier_layout = view.findViewById(R.id.modifier_layout);
+
         }
     }
 
